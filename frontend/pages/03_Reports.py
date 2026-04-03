@@ -22,28 +22,124 @@ st.set_page_config(
 def get_mock_sales_data() -> List[Dict[str, Any]]:
     """Get mock sales data."""
     return [
-        {"date": "2026-03-01", "device": "Dell Latitude 5420", "cost": 8500, "sale_price": 12500, "margin": 4000},
-        {"date": "2026-03-05", "device": "HP EliteBook 840 G7", "cost": 9000, "sale_price": 13500, "margin": 4500},
-        {"date": "2026-03-10", "device": "Lenovo ThinkPad T14", "cost": 10000, "sale_price": 15000, "margin": 5000},
-        {"date": "2026-03-15", "device": "Dell Latitude 7490", "cost": 5500, "sale_price": 8500, "margin": 3000},
-        {"date": "2026-03-20", "device": "HP EliteBook 850 G5", "cost": 7500, "sale_price": 11000, "margin": 3500},
-        {"date": "2026-03-25", "device": "Dell Precision 5540", "cost": 15000, "sale_price": 22000, "margin": 7000},
-        {"date": "2026-03-28", "device": "Lenovo ThinkPad X1", "cost": 12000, "sale_price": 17500, "margin": 5500},
-        {"date": "2026-04-01", "device": "HP ZBook 15", "cost": 18000, "sale_price": 26000, "margin": 8000},
+        {
+            "date": "2026-03-01",
+            "device": "Dell Latitude 5420",
+            "cost": 8500,
+            "sale_price": 12500,
+            "margin": 4000,
+        },
+        {
+            "date": "2026-03-05",
+            "device": "HP EliteBook 840 G7",
+            "cost": 9000,
+            "sale_price": 13500,
+            "margin": 4500,
+        },
+        {
+            "date": "2026-03-10",
+            "device": "Lenovo ThinkPad T14",
+            "cost": 10000,
+            "sale_price": 15000,
+            "margin": 5000,
+        },
+        {
+            "date": "2026-03-15",
+            "device": "Dell Latitude 7490",
+            "cost": 5500,
+            "sale_price": 8500,
+            "margin": 3000,
+        },
+        {
+            "date": "2026-03-20",
+            "device": "HP EliteBook 850 G5",
+            "cost": 7500,
+            "sale_price": 11000,
+            "margin": 3500,
+        },
+        {
+            "date": "2026-03-25",
+            "device": "Dell Precision 5540",
+            "cost": 15000,
+            "sale_price": 22000,
+            "margin": 7000,
+        },
+        {
+            "date": "2026-03-28",
+            "device": "Lenovo ThinkPad X1",
+            "cost": 12000,
+            "sale_price": 17500,
+            "margin": 5500,
+        },
+        {
+            "date": "2026-04-01",
+            "device": "HP ZBook 15",
+            "cost": 18000,
+            "sale_price": 26000,
+            "margin": 8000,
+        },
     ]
 
 
 def get_mock_inventory_data() -> List[Dict[str, Any]]:
     """Get mock inventory data."""
     return [
-        {"brand": "Dell", "model": "Latitude 5420", "status": "ready", "days_in_stock": 15, "value": 12500},
-        {"brand": "HP", "model": "EliteBook 840 G7", "status": "listed", "days_in_stock": 8, "value": 13500},
-        {"brand": "Lenovo", "model": "ThinkPad T14", "status": "refurbishing", "days_in_stock": 5, "value": 16000},
-        {"brand": "Dell", "model": "Latitude 7490", "status": "inspecting", "days_in_stock": 3, "value": 8500},
-        {"brand": "HP", "model": "EliteBook 850 G5", "status": "sold", "days_in_stock": 25, "value": 11000},
-        {"brand": "Dell", "model": "Precision 5540", "status": "ready", "days_in_stock": 20, "value": 25000},
-        {"brand": "Lenovo", "model": "ThinkPad X1", "status": "listed", "days_in_stock": 12, "value": 18000},
-        {"brand": "HP", "model": "ZBook 15", "status": "refurbishing", "days_in_stock": 7, "value": 28000},
+        {
+            "brand": "Dell",
+            "model": "Latitude 5420",
+            "status": "ready",
+            "days_in_stock": 15,
+            "value": 12500,
+        },
+        {
+            "brand": "HP",
+            "model": "EliteBook 840 G7",
+            "status": "listed",
+            "days_in_stock": 8,
+            "value": 13500,
+        },
+        {
+            "brand": "Lenovo",
+            "model": "ThinkPad T14",
+            "status": "refurbishing",
+            "days_in_stock": 5,
+            "value": 16000,
+        },
+        {
+            "brand": "Dell",
+            "model": "Latitude 7490",
+            "status": "inspecting",
+            "days_in_stock": 3,
+            "value": 8500,
+        },
+        {
+            "brand": "HP",
+            "model": "EliteBook 850 G5",
+            "status": "sold",
+            "days_in_stock": 25,
+            "value": 11000,
+        },
+        {
+            "brand": "Dell",
+            "model": "Precision 5540",
+            "status": "ready",
+            "days_in_stock": 20,
+            "value": 25000,
+        },
+        {
+            "brand": "Lenovo",
+            "model": "ThinkPad X1",
+            "status": "listed",
+            "days_in_stock": 12,
+            "value": 18000,
+        },
+        {
+            "brand": "HP",
+            "model": "ZBook 15",
+            "status": "refurbishing",
+            "days_in_stock": 7,
+            "value": 28000,
+        },
     ]
 
 
@@ -78,7 +174,7 @@ def show_reports_page() -> None:
         )
 
     with col3:
-        if st.button("🔄 Refresh", use_container_width=True):
+        if st.button("🔄 Refresh", width="stretch"):
             st.rerun()
 
     # Load data
@@ -91,7 +187,9 @@ def show_reports_page() -> None:
     inventory_df = pd.DataFrame(inventory_data)
 
     # Filter by date range
-    mask = (sales_df["date"] >= pd.to_datetime(start_date)) & (sales_df["date"] <= pd.to_datetime(end_date))
+    mask = (sales_df["date"] >= pd.to_datetime(start_date)) & (
+        sales_df["date"] <= pd.to_datetime(end_date)
+    )
     filtered_sales = sales_df[mask]
 
     # Key metrics
@@ -99,7 +197,9 @@ def show_reports_page() -> None:
 
     col1, col2, col3, col4 = st.columns(4)
 
-    total_revenue = filtered_sales["sale_price"].sum() if not filtered_sales.empty else 0
+    total_revenue = (
+        filtered_sales["sale_price"].sum() if not filtered_sales.empty else 0
+    )
     total_cost = filtered_sales["cost"].sum() if not filtered_sales.empty else 0
     total_margin = filtered_sales["margin"].sum() if not filtered_sales.empty else 0
     avg_margin_pct = (total_margin / total_revenue * 100) if total_revenue > 0 else 0
@@ -120,7 +220,9 @@ def show_reports_page() -> None:
         )
 
     with col3:
-        inventory_value = sum(item["value"] for item in inventory_data if item["status"] != "sold")
+        inventory_value = sum(
+            item["value"] for item in inventory_data if item["status"] != "sold"
+        )
         st.metric(
             label="Inventory Value",
             value=f"R {inventory_value:,.0f}",
@@ -138,12 +240,14 @@ def show_reports_page() -> None:
     st.markdown("---")
 
     # Tabs for different reports
-    tab1, tab2, tab3, tab4 = st.tabs([
-        "📊 Sales Trends",
-        "🔄 Inventory Velocity",
-        "💰 Margin Analysis",
-        "📦 Brand Performance",
-    ])
+    tab1, tab2, tab3, tab4 = st.tabs(
+        [
+            "📊 Sales Trends",
+            "🔄 Inventory Velocity",
+            "💰 Margin Analysis",
+            "📦 Brand Performance",
+        ]
+    )
 
     with tab1:
         show_sales_trends(filtered_sales)
@@ -176,31 +280,41 @@ def show_sales_trends(sales_df: pd.DataFrame) -> None:
         import plotly.express as px
 
         # Group by date
-        daily_sales = sales_df.groupby("date").agg({
-            "sale_price": "sum",
-            "margin": "sum",
-            "device": "count",
-        }).reset_index()
+        daily_sales = (
+            sales_df.groupby("date")
+            .agg(
+                {
+                    "sale_price": "sum",
+                    "margin": "sum",
+                    "device": "count",
+                }
+            )
+            .reset_index()
+        )
         daily_sales.columns = ["date", "revenue", "margin", "units"]
 
         # Create figure
         fig = go.Figure()
 
-        fig.add_trace(go.Scatter(
-            x=daily_sales["date"],
-            y=daily_sales["revenue"],
-            name="Revenue",
-            line=dict(color="#0078D4", width=3),
-            fill="tozeroy",
-            fillcolor="rgba(0, 120, 212, 0.1)",
-        ))
+        fig.add_trace(
+            go.Scatter(
+                x=daily_sales["date"],
+                y=daily_sales["revenue"],
+                name="Revenue",
+                line=dict(color="#0078D4", width=3),
+                fill="tozeroy",
+                fillcolor="rgba(0, 120, 212, 0.1)",
+            )
+        )
 
-        fig.add_trace(go.Scatter(
-            x=daily_sales["date"],
-            y=daily_sales["margin"],
-            name="Margin",
-            line=dict(color="#107C10", width=2, dash="dash"),
-        ))
+        fig.add_trace(
+            go.Scatter(
+                x=daily_sales["date"],
+                y=daily_sales["margin"],
+                name="Margin",
+                line=dict(color="#107C10", width=2, dash="dash"),
+            )
+        )
 
         fig.update_layout(
             title="Daily Revenue and Margin",
@@ -211,7 +325,7 @@ def show_sales_trends(sales_df: pd.DataFrame) -> None:
             legend=dict(orientation="h", y=1.1),
         )
 
-        st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig, width="stretch")
 
         # Summary stats
         col1, col2, col3 = st.columns(3)
@@ -229,7 +343,7 @@ def show_sales_trends(sales_df: pd.DataFrame) -> None:
         st.warning("Plotly not available. Install with: pip install plotly")
 
         # Fallback table
-        st.dataframe(sales_df, use_container_width=True)
+        st.dataframe(sales_df, width="stretch")
 
 
 def show_inventory_velocity(inventory_df: pd.DataFrame) -> None:
@@ -258,7 +372,7 @@ def show_inventory_velocity(inventory_df: pd.DataFrame) -> None:
                 title="Devices by Status",
                 color_discrete_sequence=px.colors.qualitative.Set3,
             )
-            st.plotly_chart(fig, use_container_width=True)
+            st.plotly_chart(fig, width="stretch")
 
         except ImportError:
             for status, count in status_counts.items():
@@ -268,7 +382,9 @@ def show_inventory_velocity(inventory_df: pd.DataFrame) -> None:
         # Days in stock analysis
         st.markdown("**Average Days in Stock by Status**")
 
-        days_by_status = inventory_df.groupby("status")["days_in_stock"].mean().sort_values()
+        days_by_status = (
+            inventory_df.groupby("status")["days_in_stock"].mean().sort_values()
+        )
 
         for status, days in days_by_status.items():
             delta_color = "normal" if days < 14 else "inverse"
@@ -289,11 +405,13 @@ def show_inventory_velocity(inventory_df: pd.DataFrame) -> None:
     try:
         import plotly.graph_objects as go
 
-        fig = go.Figure(go.Bar(
-            x=list(aging_buckets.keys()),
-            y=list(aging_buckets.values()),
-            marker_color=["#107C10", "#FFB900", "#FF8C00", "#D13438"],
-        ))
+        fig = go.Figure(
+            go.Bar(
+                x=list(aging_buckets.keys()),
+                y=list(aging_buckets.values()),
+                marker_color=["#107C10", "#FFB900", "#FF8C00", "#D13438"],
+            )
+        )
 
         fig.update_layout(
             title="Devices by Age in Stock",
@@ -302,7 +420,7 @@ def show_inventory_velocity(inventory_df: pd.DataFrame) -> None:
             height=300,
         )
 
-        st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig, width="stretch")
 
     except ImportError:
         for bucket, count in aging_buckets.items():
@@ -375,7 +493,7 @@ def show_margin_analysis(sales_df: pd.DataFrame) -> None:
             height=400,
         )
 
-        st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig, width="stretch")
 
     except ImportError:
         st.warning("Plotly not available.")
@@ -401,11 +519,20 @@ def show_margin_analysis(sales_df: pd.DataFrame) -> None:
     st.markdown("---")
     st.markdown("**Individual Sales**")
 
-    display_df = sales_df[["date", "device", "cost", "sale_price", "margin", "margin_pct"]].copy()
+    display_df = sales_df[
+        ["date", "device", "cost", "sale_price", "margin", "margin_pct"]
+    ].copy()
     display_df["date"] = display_df["date"].dt.strftime("%Y-%m-%d")
-    display_df.columns = ["Date", "Device", "Cost", "Sale Price", "Margin (R)", "Margin %"]
+    display_df.columns = [
+        "Date",
+        "Device",
+        "Cost",
+        "Sale Price",
+        "Margin (R)",
+        "Margin %",
+    ]
 
-    st.dataframe(display_df, use_container_width=True)
+    st.dataframe(display_df, width="stretch")
 
 
 def show_brand_performance(inventory_df: pd.DataFrame, sales_df: pd.DataFrame) -> None:
@@ -421,11 +548,17 @@ def show_brand_performance(inventory_df: pd.DataFrame, sales_df: pd.DataFrame) -
     # Inventory by brand
     st.markdown("**Current Inventory by Brand**")
 
-    brand_inventory = inventory_df.groupby("brand").agg({
-        "value": "sum",
-        "model": "count",
-        "days_in_stock": "mean",
-    }).reset_index()
+    brand_inventory = (
+        inventory_df.groupby("brand")
+        .agg(
+            {
+                "value": "sum",
+                "model": "count",
+                "days_in_stock": "mean",
+            }
+        )
+        .reset_index()
+    )
     brand_inventory.columns = ["Brand", "Total Value", "Units", "Avg Days in Stock"]
 
     col1, col2 = st.columns(2)
@@ -443,10 +576,10 @@ def show_brand_performance(inventory_df: pd.DataFrame, sales_df: pd.DataFrame) -
                 color_continuous_scale="Blues",
             )
 
-            st.plotly_chart(fig, use_container_width=True)
+            st.plotly_chart(fig, width="stretch")
 
         except ImportError:
-            st.dataframe(brand_inventory, use_container_width=True)
+            st.dataframe(brand_inventory, width="stretch")
 
     with col2:
         # Brand metrics
@@ -465,11 +598,17 @@ def show_brand_performance(inventory_df: pd.DataFrame, sales_df: pd.DataFrame) -
         # Extract brand from device name
         sales_df["brand"] = sales_df["device"].apply(lambda x: x.split()[0])
 
-        brand_sales = sales_df.groupby("brand").agg({
-            "sale_price": "sum",
-            "margin": "sum",
-            "device": "count",
-        }).reset_index()
+        brand_sales = (
+            sales_df.groupby("brand")
+            .agg(
+                {
+                    "sale_price": "sum",
+                    "margin": "sum",
+                    "device": "count",
+                }
+            )
+            .reset_index()
+        )
         brand_sales.columns = ["Brand", "Revenue", "Margin", "Units Sold"]
 
         try:
@@ -477,19 +616,23 @@ def show_brand_performance(inventory_df: pd.DataFrame, sales_df: pd.DataFrame) -
 
             fig = go.Figure()
 
-            fig.add_trace(go.Bar(
-                name="Revenue",
-                x=brand_sales["Brand"],
-                y=brand_sales["Revenue"],
-                marker_color="#0078D4",
-            ))
+            fig.add_trace(
+                go.Bar(
+                    name="Revenue",
+                    x=brand_sales["Brand"],
+                    y=brand_sales["Revenue"],
+                    marker_color="#0078D4",
+                )
+            )
 
-            fig.add_trace(go.Bar(
-                name="Margin",
-                x=brand_sales["Brand"],
-                y=brand_sales["Margin"],
-                marker_color="#107C10",
-            ))
+            fig.add_trace(
+                go.Bar(
+                    name="Margin",
+                    x=brand_sales["Brand"],
+                    y=brand_sales["Margin"],
+                    marker_color="#107C10",
+                )
+            )
 
             fig.update_layout(
                 title="Revenue and Margin by Brand",
@@ -497,10 +640,10 @@ def show_brand_performance(inventory_df: pd.DataFrame, sales_df: pd.DataFrame) -
                 height=400,
             )
 
-            st.plotly_chart(fig, use_container_width=True)
+            st.plotly_chart(fig, width="stretch")
 
         except ImportError:
-            st.dataframe(brand_sales, use_container_width=True)
+            st.dataframe(brand_sales, width="stretch")
 
     # Recommendations
     st.markdown("---")
@@ -516,9 +659,9 @@ def show_brand_performance(inventory_df: pd.DataFrame, sales_df: pd.DataFrame) -
         with col1:
             st.success(
                 f"""
-                **Fast Mover:** {fastest_selling['brand']} {fastest_selling['model']}
+                **Fast Mover:** {fastest_selling["brand"]} {fastest_selling["model"]}
                 
-                Only {fastest_selling['days_in_stock']} days in stock.
+                Only {fastest_selling["days_in_stock"]} days in stock.
                 Consider stocking more of this model.
                 """
             )
@@ -526,9 +669,9 @@ def show_brand_performance(inventory_df: pd.DataFrame, sales_df: pd.DataFrame) -
         with col2:
             st.warning(
                 f"""
-                **Slow Mover:** {slowest_selling['brand']} {slowest_selling['model']}
+                **Slow Mover:** {slowest_selling["brand"]} {slowest_selling["model"]}
                 
-                {slowest_selling['days_in_stock']} days in stock.
+                {slowest_selling["days_in_stock"]} days in stock.
                 Consider price adjustment or promotion.
                 """
             )

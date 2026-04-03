@@ -146,7 +146,7 @@ def render_sync_button(store_url: str, consumer_key: str, consumer_secret: str):
     with col1:
         sync_btn = st.button(
             "🔄 Sync Now",
-            use_container_width=True,
+            width="stretch",
             type="primary",
             disabled=not (store_url and consumer_key and consumer_secret),
         )
@@ -354,7 +354,7 @@ def render_product_table(products: List[Dict]):
     # Render table with custom styling
     st.dataframe(
         display_df,
-        use_container_width=True,
+        width="stretch",
         hide_index=True,
         column_config={
             "Stock": st.column_config.NumberColumn(format="%d"),
@@ -401,7 +401,7 @@ def render_export_section():
                 data=csv,
                 file_name="woo_products.csv",
                 mime="text/csv",
-                use_container_width=True,
+                width="stretch",
             )
 
         with col2:
@@ -411,7 +411,7 @@ def render_export_section():
                 data=json_str,
                 file_name="woo_products.json",
                 mime="application/json",
-                use_container_width=True,
+                width="stretch",
             )
 
 

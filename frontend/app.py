@@ -177,7 +177,7 @@ def show_login_page() -> None:
 
             col_btn1, col_btn2, col_btn3 = st.columns([1, 2, 1])
             with col_btn2:
-                submit = st.form_submit_button("Sign In", use_container_width=True)
+                submit = st.form_submit_button("Sign In", width="stretch")
 
             if submit:
                 if login(username, password):
@@ -229,7 +229,7 @@ def show_main_app() -> None:
         st.markdown("---")
 
         # Logout button
-        if st.button("🚪 Sign Out", use_container_width=True):
+        if st.button("🚪 Sign Out", width="stretch"):
             logout()
 
         st.markdown("---")
@@ -276,7 +276,7 @@ def show_home() -> None:
         st.markdown("---")
 
         # Logout button
-        if st.button("🚪 Sign Out", use_container_width=True):
+        if st.button("🚪 Sign Out", width="stretch"):
             logout()
 
         st.markdown("---")
@@ -354,15 +354,15 @@ def show_home() -> None:
     col1, col2, col3 = st.columns(3)
 
     with col1:
-        if st.button("📦 Add New Device", use_container_width=True, type="primary"):
+        if st.button("📦 Add New Device", width="stretch", type="primary"):
             st.switch_page("pages/01_Inventory.py")
 
     with col2:
-        if st.button("💰 Check Market Price", use_container_width=True):
+        if st.button("💰 Check Market Price", width="stretch"):
             st.switch_page("pages/02_Price_Check.py")
 
     with col3:
-        if st.button("📊 View Reports", use_container_width=True):
+        if st.button("📊 View Reports", width="stretch"):
             st.switch_page("pages/03_Reports.py")
 
     st.markdown("---")

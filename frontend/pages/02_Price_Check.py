@@ -109,7 +109,7 @@ def show_price_check_page() -> None:
         )
 
     with col2:
-        search_btn = st.button("🔍 Check Prices", use_container_width=True, type="primary")
+        search_btn = st.button("🔍 Check Prices", width="stretch", type="primary")
 
     # Quick select popular models
     st.markdown("**Popular Models:**")
@@ -124,7 +124,7 @@ def show_price_check_page() -> None:
     cols = st.columns(5)
     for i, model in enumerate(quick_models):
         with cols[i]:
-            if st.button(model, key=f"quick_{i}", use_container_width=True):
+            if st.button(model, key=f"quick_{i}", width="stretch"):
                 st.session_state.search_query = model
                 st.session_state.market_data = None
                 st.rerun()
@@ -170,7 +170,9 @@ def show_scraping_progress(search_query: str) -> None:
     st.session_state.is_scraping = False
 
     status_text.text("✅ Complete!")
-    st.success(f"Found {market_data['total_listings']} listings across {len(market_data['sources_scraped'])} sources")
+    st.success(
+        f"Found {market_data['total_listings']} listings across {len(market_data['sources_scraped'])} sources"
+    )
 
     st.rerun()
 
@@ -349,13 +351,15 @@ def show_market_chart(market_data: Dict[str, Any]) -> None:
         fig = go.Figure()
 
         for source, prices in price_by_source.items():
-            fig.add_trace(go.Box(
-                y=prices,
-                name=source,
-                boxpoints="all",
-                jitter=0.3,
-                pointpos=-1.8,
-            ))
+            fig.add_trace(
+                go.Box(
+                    y=prices,
+                    name=source,
+                    boxpoints="all",
+                    jitter=0.3,
+                    pointpos=-1.8,
+                )
+            )
 
         fig.update_layout(
             title="Price Distribution by Source",
@@ -365,7 +369,7 @@ def show_market_chart(market_data: Dict[str, Any]) -> None:
             showlegend=False,
         )
 
-        st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig, width="stretch")
 
     except ImportError:
         st.warning("Plotly not available. Install with: pip install plotly")
@@ -374,7 +378,9 @@ def show_market_chart(market_data: Dict[str, Any]) -> None:
         st.markdown("**Price Range by Source:**")
         for source, prices in market_data.get("price_by_source", {}).items():
             if prices:
-                st.markdown(f"- **{source}:** {format_zar(min(prices))} - {format_zar(max(prices))}")
+                st.markdown(
+                    f"- **{source}:** {format_zar(min(prices))} - {format_zar(max(prices))}"
+                )
 
 
 def show_quote_generator(market_data: Dict[str, Any]) -> None:
@@ -433,7 +439,7 @@ def show_quote_generator(market_data: Dict[str, Any]) -> None:
         customer_email = st.text_input("Customer Email", placeholder="Optional")
 
     # Generate quote button
-    if st.button("📄 Generate Quote", type="primary", use_container_width=True):
+    if st.button("📄 Generate Quote", type="primary", width="stretch"):
         device = {
             "brand": device_brand or "Unknown",
             "model": device_model,
@@ -447,13 +453,13 @@ def show_quote_generator(market_data: Dict[str, Any]) -> None:
 
         # Download button for quote
         quote_text = f"""
-QUOTE: {device_brand or 'Unknown'} {device_model}
-Serial: {device_serial or 'N/A'}
+QUOTE: {device_brand or "Unknown"} {device_model}
+Serial: {device_serial or "N/A"}
 Condition: {device_condition.title()}
 Specs: {device_ram}GB RAM, {device_storage}GB SSD
 
 Price: R {quote_price:,.2f}
-Valid until: {(datetime.now() + timedelta(days=valid_days)).strftime('%Y-%m-%d')}
+Valid until: {(datetime.now() + timedelta(days=valid_days)).strftime("%Y-%m-%d")}
 
 RefurbAdmin AI - Quality Refurbished IT
 📞 011 123 4567 | 🌐 www.refurbadmin.co.za

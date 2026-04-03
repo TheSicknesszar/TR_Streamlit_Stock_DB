@@ -96,12 +96,12 @@ def render_device_card(
             col1, col2, col3 = st.columns([3, 1, 1])
 
             with col2:
-                if st.button("✏️ Edit", key=f"edit_{device_id}", use_container_width=True):
+                if st.button("✏️ Edit", key=f"edit_{device_id}", width="stretch"):
                     if on_edit:
                         on_edit(device_id)
 
             with col3:
-                if st.button("🗑️ Delete", key=f"delete_{device_id}", use_container_width=True):
+                if st.button("🗑️ Delete", key=f"delete_{device_id}", width="stretch"):
                     if on_delete:
                         on_delete(device_id)
 

@@ -65,7 +65,7 @@ def render_price_display(
             ">
                 <div style="font-size: 0.8rem; opacity: 0.9;">{label}</div>
                 <div style="font-size: 1.8rem; font-weight: 700;">{format_zar(price)}</div>
-                {f'<div style="font-size: 0.9rem; opacity: 0.8;">Save {discount:.0f}%</div>' if discount else ''}
+                {f'<div style="font-size: 0.9rem; opacity: 0.8;">Save {discount:.0f}%</div>' if discount else ""}
             </div>
             """,
             unsafe_allow_html=True,
@@ -113,7 +113,7 @@ def copy_button(value: str, button_label: str = "📋 Copy") -> bool:
     # with session state and instructions
     key = f"copy_{hash(str(value))}"
 
-    if st.button(button_label, key=key, use_container_width=True):
+    if st.button(button_label, key=key, width="stretch"):
         st.success(f"Copied: {value}")
         return True
     return False
@@ -225,7 +225,9 @@ def render_market_comparison(
     with col2:
         st.markdown(f"**Position:** :{color}[{position}]")
         st.markdown(f"**Competitors:** {competitor_count} listings")
-        st.markdown(f"**Market Range:** {format_zar(market_min)} - {format_zar(market_max)}")
+        st.markdown(
+            f"**Market Range:** {format_zar(market_min)} - {format_zar(market_max)}"
+        )
 
     # Visual comparison bar
     st.markdown("**Price Position**")
@@ -268,13 +270,13 @@ def render_quote_snippet(
     valid_until = datetime.now() + timedelta(days=valid_days)
 
     snippet = f"""
-*QUOTE: {device.get('brand', '')} {device.get('model', '')}*
-Serial: {device.get('serial_number', 'N/A')}
-Condition: {device.get('condition', 'Unknown').title()}
-Specs: {device.get('ram_gb', 0)}GB RAM, {device.get('storage_gb', 0)}GB {device.get('storage_type', 'SSD')}
+*QUOTE: {device.get("brand", "")} {device.get("model", "")}*
+Serial: {device.get("serial_number", "N/A")}
+Condition: {device.get("condition", "Unknown").title()}
+Specs: {device.get("ram_gb", 0)}GB RAM, {device.get("storage_gb", 0)}GB {device.get("storage_type", "SSD")}
 
 *Price: {format_zar(price)}*
-Valid until: {valid_until.strftime('%Y-%m-%d')}
+Valid until: {valid_until.strftime("%Y-%m-%d")}
 
 RefurbAdmin AI - Quality Refurbished IT
 📞 011 123 4567 | 🌐 www.refurbadmin.co.za

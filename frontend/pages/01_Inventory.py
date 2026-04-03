@@ -173,7 +173,7 @@ def show_inventory_page() -> None:
 
         # Reset filters
         st.markdown("---")
-        if st.button("🔄 Reset Filters", use_container_width=True):
+        if st.button("🔄 Reset Filters", width="stretch"):
             st.session_state.inv_status_filter = "All"
             st.session_state.inv_brand_filter = "All"
             st.session_state.inv_location_filter = "All"
@@ -192,7 +192,7 @@ def show_inventory_page() -> None:
         )
 
     with col2:
-        if st.button("➕ Add Device", use_container_width=True, type="primary"):
+        if st.button("➕ Add Device", width="stretch", type="primary"):
             st.session_state.show_add_form = True
             st.rerun()
 
@@ -295,7 +295,7 @@ def show_inventory_page() -> None:
                 "Value",
                 "Location",
             ]
-            st.dataframe(df, use_container_width=True)
+            st.dataframe(df, width="stretch")
 
     # Show add form if requested
     if st.session_state.show_add_form:
@@ -362,11 +362,11 @@ def show_add_device_form() -> None:
 
         with col1:
             submitted = st.form_submit_button(
-                "💾 Save Device", use_container_width=True, type="primary"
+                "💾 Save Device", width="stretch", type="primary"
             )
 
         with col2:
-            cancelled = st.form_submit_button("❌ Cancel", use_container_width=True)
+            cancelled = st.form_submit_button("❌ Cancel", width="stretch")
 
         if submitted:
             # Validate required fields
@@ -553,11 +553,11 @@ def show_edit_device_form() -> None:
 
         with col1:
             submitted = st.form_submit_button(
-                "💾 Save Changes", use_container_width=True, type="primary"
+                "💾 Save Changes", width="stretch", type="primary"
             )
 
         with col2:
-            cancelled = st.form_submit_button("❌ Cancel", use_container_width=True)
+            cancelled = st.form_submit_button("❌ Cancel", width="stretch")
 
         if submitted:
             # Update device
