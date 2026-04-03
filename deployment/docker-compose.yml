@@ -1,0 +1,287 @@
+# =============================================================================
+# RefurbAdmin AI - Docker Compose Production Stack
+# =============================================================================
+# Full stack orchestration for production deployment
+# Includes: FastAPI, PostgreSQL, pgAdmin, Redis, Nginx
+# POPIA compliant with South African data protection
+# =============================================================================
+
+version: '3.8'
+
+services:
+  # -------------------------------------------------------------------------
+  # FastAPI Application
+  # -------------------------------------------------------------------------
+  app:
+    build:
+      context: ..
+      dockerfile: deployment/Dockerfile
+      target: production
+    container_name: refurbadmin-app
+    restart: unless-stopped
+    env_file:
+      - .env.production
+    environment:
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-refurbadmin}:${POSTGRES_PASSWORD:-changeme}@db:5432/${POSTGRES_DB:-refurbadmin}
+      - REDIS_URL=redis://redis:6379/0
+      - LOG_LEVEL=INFO
+    volumes:
+      - app-logs:/app/logs
+      - app-data:/app/data
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - refurbadmin-network
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 2G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+
+  # -------------------------------------------------------------------------
+  # PostgreSQL Database
+  # -------------------------------------------------------------------------
+  db:
+    image: postgres:16-alpine
+    container_name: refurbadmin-db
+    restart: unless-stopped
+    env_file:
+      - .env.production
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER:-refurbadmin}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-changeme}
+      - POSTGRES_DB=${POSTGRES_DB:-refurbadmin}
+      - PGDATA=/var/lib/postgresql/data/pgdata
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./scripts/init-db.sql:/docker-entrypoint-initdb.d/init-db.sql:ro
+      - db-backups:/backups
+    networks:
+      - refurbadmin-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-refurbadmin} -d ${POSTGRES_DB:-refurbadmin}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 2G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+
+  # -------------------------------------------------------------------------
+  # pgAdmin - Database Management (Production: Restrict Access!)
+  # -------------------------------------------------------------------------
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: refurbadmin-pgadmin
+    restart: unless-stopped
+    env_file:
+      - .env.production
+    environment:
+      - PGADMIN_DEFAULT_EMAIL=${PGADMIN_EMAIL:-admin@refurbadmin.co.za}
+      - PGADMIN_DEFAULT_PASSWORD=${PGADMIN_PASSWORD:-admin123}
+      - PGADMIN_CONFIG_SERVER_MODE=False
+      - PGADMIN_CONFIG_MASTER_PASSWORD_REQUIRED=False
+    volumes:
+      - pgadmin-data:/var/lib/pgadmin
+      - ./scripts/pgadmin_servers.json:/pgadmin4/servers.json:ro
+    networks:
+      - refurbadmin-network
+    depends_on:
+      - db
+    profiles:
+      - admin  # Only start with --profile admin
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 256M
+
+  # -------------------------------------------------------------------------
+  # Redis - Caching and Session Storage
+  # -------------------------------------------------------------------------
+  redis:
+    image: redis:7-alpine
+    container_name: refurbadmin-redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD:-redis_secret_password}
+    volumes:
+      - redis-data:/data
+    networks:
+      - refurbadmin-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "--pass", "${REDIS_PASSWORD:-redis_secret_password}", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 512M
+        reservations:
+          cpus: '0.25'
+          memory: 128M
+
+  # -------------------------------------------------------------------------
+  # Nginx - Reverse Proxy and SSL Termination
+  # -------------------------------------------------------------------------
+  nginx:
+    image: nginx:alpine
+    container_name: refurbadmin-nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./ssl:/etc/nginx/ssl:ro
+      - nginx-logs:/var/log/nginx
+    depends_on:
+      - app
+    networks:
+      - refurbadmin-network
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 256M
+        reservations:
+          cpus: '0.25'
+          memory: 64M
+
+  # -------------------------------------------------------------------------
+  # Backup Service - Automated Database Backups
+  # -------------------------------------------------------------------------
+  backup:
+    image: postgres:16-alpine
+    container_name: refurbadmin-backup
+    restart: unless-stopped
+    env_file:
+      - .env.production
+    environment:
+      - PGPASSWORD=${POSTGRES_PASSWORD:-changeme}
+      - BACKUP_RETENTION_DAYS=${BACKUP_RETENTION_DAYS:-7}
+    volumes:
+      - db-backups:/backups
+      - ./scripts/backup_cron.sh:/backup_cron.sh:ro
+    networks:
+      - refurbadmin-network
+    depends_on:
+      - db
+    entrypoint: /backup_cron.sh
+    profiles:
+      - backup  # Only start with --profile backup
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 256M
+
+  # -------------------------------------------------------------------------
+  # Prometheus - Metrics Collection (Optional)
+  # -------------------------------------------------------------------------
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: refurbadmin-prometheus
+    restart: unless-stopped
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--storage.tsdb.retention.time=15d'
+      - '--web.enable-lifecycle'
+    networks:
+      - refurbadmin-network
+    depends_on:
+      - app
+    profiles:
+      - monitoring  # Only start with --profile monitoring
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1G
+
+  # -------------------------------------------------------------------------
+  # Grafana - Metrics Visualization (Optional)
+  # -------------------------------------------------------------------------
+  grafana:
+    image: grafana/grafana:latest
+    container_name: refurbadmin-grafana
+    restart: unless-stopped
+    environment:
+      - GF_SECURITY_ADMIN_USER=${GRAFANA_ADMIN_USER:-admin}
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD:-admin123}
+      - GF_INSTALL_PLUGINS=grafana-clock-panel,grafana-simple-json-datasource
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+    networks:
+      - refurbadmin-network
+    depends_on:
+      - prometheus
+    ports:
+      - "3000:3000"
+    profiles:
+      - monitoring  # Only start with --profile monitoring
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 512M
+
+# =============================================================================
+# Networks
+# =============================================================================
+networks:
+  refurbadmin-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.28.0.0/16
+
+# =============================================================================
+# Volumes
+# =============================================================================
+volumes:
+  postgres-data:
+    driver: local
+  db-backups:
+    driver: local
+  redis-data:
+    driver: local
+  app-logs:
+    driver: local
+  app-data:
+    driver: local
+  pgadmin-data:
+    driver: local
+  nginx-logs:
+    driver: local
+  prometheus-data:
+    driver: local
+  grafana-data:
+    driver: local

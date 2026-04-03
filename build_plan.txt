@@ -1,0 +1,1285 @@
+================================================================================
+                    REFURBADMIN AI – BUILD PLAN
+          Inventory & Pricing Automation Platform
+================================================================================
+Version: 1.0
+Generated: 01 April 2026
+Region: South Africa (ZAR)
+Status: Ready for Implementation
+
+================================================================================
+TABLE OF CONTENTS
+================================================================================
+1. Executive Summary
+2. Project Structure & Folder Layout
+3. Phase-by-Phase Implementation Plan
+4. Technical Specifications
+5. Database Schema Design
+6. API Endpoint Specifications
+7. File Dependencies & Requirements
+8. Testing Strategy
+9. Deployment Considerations (South African Context)
+10. Risk Register & Mitigation
+11. Success Metrics & KPIs
+
+================================================================================
+1. EXECUTIVE SUMMARY
+================================================================================
+
+RefurbAdmin AI is a comprehensive inventory and pricing automation platform for
+an IT refurbishment business in South Africa. The system centralizes inventory
+management, implements dynamic pricing based on local market conditions, and
+accelerates client quoting through a REST API.
+
+KEY OBJECTIVES:
+- Reduce quote generation time from ~15 minutes to <30 seconds
+- Maintain gross margins above 25% after dynamic pricing adjustments
+- Achieve 95% inventory record accuracy with valid serial numbers
+- Ensure POPIA compliance for all customer data handling
+
+CORE FEATURE: /api/v1/price-check endpoint for instant pricing via serial number
+
+================================================================================
+2. PROJECT STRUCTURE & FOLDER LAYOUT
+================================================================================
+
+refurbadmin_ai/
+│
+├── app/
+│   ├── __init__.py
+│   ├── main.py                    # FastAPI application entry point
+│   ├── config.py                  # Configuration settings (env vars, constants)
+│   ├── database.py                # Database connection & session management
+│   │
+│   ├── api/
+│   │   ├── __init__.py
+│   │   ├── deps.py                # API dependencies (auth, validation)
+│   │   ├── v1/
+│   │   │   ├── __init__.py
+│   │   │   ├── router.py          # API v1 router aggregation
+│   │   │   ├── price_check.py     # /api/v1/price-check endpoint
+│   │   │   ├── inventory.py       # Inventory CRUD endpoints
+│   │   │   ├── market_data.py     # Market price endpoints
+│   │   │   └── reports.py         # Reporting & analytics endpoints
+│   │   └── v2/                    # Reserved for future versions
+│   │
+│   ├── models/
+│   │   ├── __init__.py
+│   │   ├── device.py              # Device inventory model
+│   │   ├── market_price.py        # Market price cache model
+│   │   ├── quote.py               # Quote history model
+│   │   └── user.py                # User/authentication model
+│   │
+│   ├── schemas/
+│   │   ├── __init__.py
+│   │   ├── device.py              # Pydantic schemas for devices
+│   │   ├── pricing.py             # Pricing request/response schemas
+│   │   ├── market.py              # Market data schemas
+│   │   └── common.py              # Common response schemas
+│   │
+│   ├── services/
+│   │   ├── __init__.py
+│   │   ├── inventory_service.py   # Business logic for inventory
+│   │   ├── pricing_service.py     # Smart pricing engine
+│   │   ├── market_scraper.py      # Web scraping for market data
+│   │   ├── quote_service.py       # Quote generation & templates
+│   │   └── notification_service.py # Email/WhatsApp notifications
+│   │
+│   ├── scrapers/
+│   │   ├── __init__.py
+│   │   ├── base_scraper.py        # Abstract base scraper class
+│   │   ├── pricecheck_scraper.py  # PriceCheck.co.za scraper
+│   │   ├── takealot_scraper.py    # Takealot.com scraper
+│   │   └── gumtree_scraper.py     # Gumtree.co.za scraper
+│   │
+│   ├── utils/
+│   │   ├── __init__.py
+│   │   ├── validators.py          # Input validation utilities
+│   │   ├── formatters.py          # Currency, date formatting (ZAR)
+│   │   ├── encryption.py          # POPIA-compliant encryption
+│   │   └── logging.py             # Custom logging configuration
+│   │
+│   └── templates/
+│       ├── __init__.py
+│       ├── email_templates.py     # Email template definitions
+│       └── quote_templates.py     # Quote text templates
+│
+├── migrations/                    # Alembic database migrations
+│   ├── versions/
+│   ├── env.py
+│   └── script.py.mako
+│
+├── scripts/
+│   ├── __init__.py
+│   ├── migrate_csv.py             # CSV to PostgreSQL migration script
+│   ├── reconcile_data.py          # Data reconciliation for INVD records
+│   ├── seed_market_data.py        # Initial market data seeding
+│   └── run_scrapers.py            # Scheduled scraper execution
+│
+├── data/
+│   ├── raw/                       # Original CSV files (read-only)
+│   │   ├── Device Serial Numbers.csv
+│   │   └── stock_tracking_*.csv
+│   ├── processed/                 # Processed/cleaned data
+│   └── cache/                     # Market price cache (JSON)
+│
+├── tests/
+│   ├── __init__.py
+│   ├── conftest.py                # Pytest fixtures
+│   ├── test_api/
+│   │   ├── test_price_check.py
+│   │   ├── test_inventory.py
+│   │   └── test_auth.py
+│   ├── test_services/
+│   │   ├── test_pricing_service.py
+│   │   ├── test_inventory_service.py
+│   │   └── test_market_scraper.py
+│   └── test_utils/
+│       ├── test_validators.py
+│       └── test_formatters.py
+│
+├── frontend/                      # React/Streamlit dashboard
+│   ├── app.py                     # Streamlit main application
+│   ├── pages/
+│   │   ├── inventory.py
+│   │   ├── pricing.py
+│   │   └── reports.py
+│   └── components/
+│       ├── device_card.py
+│       └── price_display.py
+│
+├── docs/
+│   ├── api_specification.md
+│   ├── database_schema.md
+│   ├── deployment_guide.md
+│   └── user_manual.md
+│
+├── .env.example                   # Environment variable template
+├── .gitignore
+├── requirements.txt               # Python dependencies
+├── requirements-dev.txt           # Development dependencies
+├── alembic.ini                    # Alembic configuration
+├── run_app.bat                    # Windows launcher (virtual env + app)
+├── docker-compose.yml             # Docker orchestration (optional)
+└── README.md                      # Project documentation
+
+================================================================================
+3. PHASE-BY-PHASE IMPLEMENTATION PLAN
+================================================================================
+
+PHASE 1: DATA MIGRATION (Weeks 1-2)
+────────────────────────────────────────────────────────────────────────────────
+Objective: Migrate CSV data to PostgreSQL with proper reconciliation
+
+Week 1:
+├── Day 1-2: Database Setup
+│   ├── Install PostgreSQL 15+ on server
+│   ├── Create database: refurbadmin_ai
+│   ├── Create database user with appropriate permissions
+│   └── Configure connection pooling settings
+│
+├── Day 3-4: Schema Implementation
+│   ├── Run initial Alembic migration (devices table)
+│   ├── Create indexes on serial_number, status, date_received
+│   ├── Implement ENUM types for status and condition_grade
+│   └── Set up foreign key constraints
+│
+└── Day 5: Migration Script Development
+    ├── Build CSV parser for Device Serial Numbers.csv
+    ├── Build CSV parser for stock_tracking_*.csv
+    └── Implement data validation before insertion
+
+Week 2:
+├── Day 1-2: Data Reconciliation
+│   ├── Match serial numbers between CSV sources
+│   ├── Flag INVD records for manual review
+│   └── Generate reconciliation report
+│
+├── Day 3-4: Data Import Execution
+│   ├── Run migration script on production database
+│   ├── Verify record counts and data integrity
+│   └── Create backup of migrated data
+│
+└── Day 5: Validation & Sign-off
+    ├── Sample verification of 100 random records
+    ├── Confirm serial number uniqueness constraint
+    └── Phase 1 completion review
+
+Deliverables:
+- PostgreSQL database with devices table populated
+- Data reconciliation report (matched/unmatched records)
+- Migration scripts for future use
+- Backup strategy documentation
+
+────────────────────────────────────────────────────────────────────────────────
+
+PHASE 2: CORE API (Weeks 3-5)
+────────────────────────────────────────────────────────────────────────────────
+Objective: Build REST API with authentication and core endpoints
+
+Week 3:
+├── Day 1-2: Project Foundation
+│   ├── Initialize FastAPI application structure
+│   ├── Configure CORS, middleware, and error handlers
+│   └── Set up logging with South African timezone (SAST)
+│
+├── Day 3-4: Authentication System
+│   ├── Implement API key authentication (Bearer token)
+│   ├── Create API key management endpoints
+│   └── Implement key rotation mechanism (90-day expiry)
+│
+└── Day 5: Database Integration
+    ├── Configure SQLAlchemy async sessions
+    ├── Implement repository pattern for data access
+    └── Set up connection pooling for performance
+
+Week 4:
+├── Day 1-3: Inventory CRUD Endpoints
+│   ├── POST /api/v1/inventory - Create device record
+│   ├── GET /api/v1/inventory - List devices (paginated)
+│   ├── GET /api/v1/inventory/{id} - Get device details
+│   ├── PUT /api/v1/inventory/{id} - Update device
+│   └── DELETE /api/v1/inventory/{id} - Soft delete device
+│
+└── Day 4-5: /api/v1/price-check Endpoint
+    ├── Implement serial number validation
+    ├── Build device lookup logic
+    └── Create response schema with client snippet
+
+Week 5:
+├── Day 1-2: Price Check Logic (Basic)
+│   ├── Implement status checking (ready/BER/strip)
+│   ├── Calculate days_in_stock from date_received
+│   └── Return static pricing (market data integration in Phase 3)
+│
+├── Day 3-4: Error Handling & Edge Cases
+│   ├── Handle DEVICE_NOT_FOUND (404)
+│   ├── Handle DEVICE_NOT_READY (400)
+│   ├── Handle BER/Parts status appropriately
+│   └── Implement request validation
+│
+└── Day 5: API Documentation
+    ├── Generate OpenAPI/Swagger documentation
+    ├── Create Postman collection for testing
+    └── Phase 2 completion review
+
+Deliverables:
+- Fully functional REST API with authentication
+- /api/v1/price-check endpoint (basic pricing)
+- Inventory CRUD operations
+- API documentation (Swagger UI, ReDoc)
+
+────────────────────────────────────────────────────────────────────────────────
+
+PHASE 3: PRICING ENGINE (Weeks 6-8)
+────────────────────────────────────────────────────────────────────────────────
+Objective: Implement smart pricing with market data and velocity modifiers
+
+Week 6:
+├── Day 1-2: Market Data Model
+│   ├── Create market_prices table schema
+│   ├── Define fields: model, ram, ssd, price, source, scraped_at
+│   └── Implement cache invalidation strategy (24-hour expiry)
+│
+├── Day 3-5: Web Scraper Development
+│   ├── Build base scraper class with error handling
+│   ├── Implement PriceCheck.co.za scraper
+│   └── Implement Takealot.com scraper
+
+Week 7:
+├── Day 1-2: Additional Scrapers
+│   ├── Implement Gumtree.co.za scraper
+│   └── Handle anti-bot measures (rate limiting, headers)
+│
+├── Day 3-4: Pricing Algorithm Implementation
+│   ├── Calculate base_market_price (median of listings)
+│   ├── Implement inventory velocity calculation
+│   └── Apply velocity modifiers:
+│   │   - Slow moving (>30 days, >5 units): -10% discount
+│   │   - High demand (<5 units): +5% premium
+│   │   - Normal: no adjustment
+│
+└── Day 5: Retail Price Rounding
+    ├── Implement round_to_retail() function
+    └── Apply psychology pricing (R6,499 / R6,999 / R7,499)
+
+Week 8:
+├── Day 1-2: Price Check Integration
+│   ├── Integrate pricing engine with /api/v1/price-check
+│   ├── Add margin_override support for manager overrides
+│   └── Implement price history tracking
+│
+├── Day 3-4: Scraper Scheduling
+│   ├── Set up scheduled scraper execution (daily)
+│   ├── Implement scraper health monitoring
+│   └── Create alerts for scraper failures
+│
+└── Day 5: Testing & Optimization
+    ├── Performance testing (<2 second response time)
+    ├── Validate pricing accuracy against manual quotes
+    └── Phase 3 completion review
+
+Deliverables:
+- Smart pricing engine with velocity modifiers
+- Market data scrapers for 3 SA retailers
+- Daily automated price updates
+- Price history tracking
+
+────────────────────────────────────────────────────────────────────────────────
+
+PHASE 4: FRONTEND DASHBOARD (Weeks 9-11)
+────────────────────────────────────────────────────────────────────────────────
+Objective: Build staff dashboard for inventory management and quoting
+
+Week 9:
+├── Day 1-2: Streamlit Setup
+│   ├── Initialize Streamlit application
+│   ├── Configure session state management
+│   └── Set up page navigation structure
+│
+├── Day 3-5: Inventory Dashboard
+│   ├── Device list view with filters (status, make, model)
+│   ├── Device detail view with full specifications
+│   └── Quick status update functionality
+
+Week 10:
+├── Day 1-3: Price Check Interface
+│   ├── Serial number search input
+│   ├── Display pricing breakdown (base, adjustment, final)
+│   ├── Copy-to-clipboard for client snippet
+│   └── Quote generation with validity period
+│
+├── Day 4-5: Manual Override System
+│   ├── Manager approval workflow for price overrides
+│   ├── Discount limit enforcement (max 15%)
+│   └── Override audit logging
+
+Week 11:
+├── Day 1-2: Reporting Dashboard
+│   ├── Inventory velocity report (days in stock)
+│   ├── Margin analysis by device category
+│   └── Sales performance metrics
+│
+├── Day 3-4: Client Communication Templates
+│   ├── Email template selection (Formal/Friendly/Urgent)
+│   ├── Quote PDF generation
+│   └── WhatsApp message formatting
+│
+└── Day 5: UI Polish & Testing
+    ├── Responsive design verification
+    ├── User acceptance testing with staff
+    └── Phase 4 completion review
+
+Deliverables:
+- Streamlit dashboard for staff
+- Price check interface with snippet copying
+- Manual override system with audit trail
+- Reporting and analytics views
+
+────────────────────────────────────────────────────────────────────────────────
+
+PHASE 5: TESTING & LAUNCH (Weeks 12-13)
+────────────────────────────────────────────────────────────────────────────────
+Objective: Comprehensive testing, security audit, and production deployment
+
+Week 12:
+├── Day 1-2: Unit Testing
+│   ├── Achieve 80%+ code coverage
+│   ├── Test all service layer functions
+│   └── Validate utility functions (formatters, validators)
+│
+├── Day 3-4: Integration Testing
+│   ├── Test API endpoint chains
+│   ├── Validate database transactions
+│   └── Test scraper integration
+│
+└── Day 5: Performance Testing
+    ├── Load testing (concurrent API requests)
+    ├── Database query optimization
+    └── Response time verification (<2 seconds)
+
+Week 13:
+├── Day 1-2: Security Audit
+│   ├── API key security review
+│   ├── SQL injection prevention verification
+│   ├── POPIA compliance check (data encryption)
+│   └── HTTPS enforcement verification
+│
+├── Day 3-4: User Acceptance Testing
+│   ├── Staff training sessions
+│   ├── Real-world scenario testing
+│   └── Bug fixes and adjustments
+│
+└── Day 5: Production Deployment
+    ├── Deploy to production server
+    ├── Configure monitoring and alerting
+    ├── Create runbook for operations
+    └── Project launch and handover
+
+Deliverables:
+- Test reports (unit, integration, performance)
+- Security audit documentation
+- User training materials
+- Production deployment completed
+
+================================================================================
+4. TECHNICAL SPECIFICATIONS
+================================================================================
+
+4.1 BACKEND STACK
+────────────────────────────────────────────────────────────────────────────────
+Framework:      FastAPI 0.104+
+Python:         3.11+
+Database ORM:   SQLAlchemy 2.0 (async)
+Validation:     Pydantic 2.0
+Authentication: API Key (Bearer token)
+Password Hash:  bcrypt (for admin users)
+
+4.2 DATABASE
+────────────────────────────────────────────────────────────────────────────────
+Database:       PostgreSQL 15+
+Connection:     Asyncpg driver
+Pooling:        SQLAlchemy async engine with pool_pre_ping
+Migrations:     Alembic 1.12+
+
+4.3 WEB SCRAPING
+────────────────────────────────────────────────────────────────────────────────
+HTTP Client:    httpx (async)
+HTML Parsing:   BeautifulSoup4
+Browser Auto:   Selenium (for JavaScript-heavy sites)
+Rate Limiting:  asyncio.Semaphore (max 5 concurrent)
+Retry Logic:    tenacity library with exponential backoff
+
+4.4 FRONTEND
+────────────────────────────────────────────────────────────────────────────────
+Framework:      Streamlit 1.28+
+Charts:         Plotly/Altair
+State:          Streamlit session_state
+Styling:        Custom CSS with South African branding
+
+4.5 INFRASTRUCTURE
+────────────────────────────────────────────────────────────────────────────────
+Server:         Windows Server 2019+ (or Linux)
+Hosting:        Local server OR AWS Cape Town Region (af-south-1)
+Web Server:     Uvicorn (ASGI) behind Nginx
+Process Mgmt:   PM2 or Windows Service
+Monitoring:     Prometheus + Grafana (optional)
+
+4.6 SECURITY
+────────────────────────────────────────────────────────────────────────────────
+Encryption:     Fernet (cryptography library) for PII
+HTTPS:          Required (Let's Encrypt or commercial cert)
+API Keys:       32-byte random, stored hashed
+Audit Logging:  All API requests logged with timestamp
+
+================================================================================
+5. DATABASE SCHEMA DESIGN
+================================================================================
+
+5.1 DEVICES TABLE
+────────────────────────────────────────────────────────────────────────────────
+CREATE TABLE devices (
+    id                  UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    serial_number       VARCHAR(100) UNIQUE NOT NULL,
+    make                VARCHAR(50) NOT NULL,
+    model               VARCHAR(100) NOT NULL,
+    processor           VARCHAR(100),
+    ram_gb              INTEGER,
+    ssd_gb              INTEGER,
+    condition_grade     VARCHAR(20) CHECK (condition_grade IN 
+                        ('Grade A', 'Grade B', 'Grade C', 'BER', 'Parts')),
+    status              VARCHAR(30) CHECK (status IN 
+                        ('Intake', 'Diagnosis', 'Waiting Parts', 
+                         'Ready', 'Sold', 'BER', 'Strip for Parts')),
+    date_received       DATE NOT NULL,
+    cost_price          DECIMAL(10,2),
+    sale_price          DECIMAL(10,2),
+    customer_id         UUID REFERENCES customers(id),
+    created_at          TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at          TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Indexes for performance
+CREATE INDEX idx_devices_serial ON devices(serial_number);
+CREATE INDEX idx_devices_status ON devices(status);
+CREATE INDEX idx_devices_date_received ON devices(date_received);
+CREATE INDEX idx_devices_model ON devices(make, model, ram_gb, ssd_gb);
+
+5.2 MARKET_PRICES TABLE
+────────────────────────────────────────────────────────────────────────────────
+CREATE TABLE market_prices (
+    id                  UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    model               VARCHAR(100) NOT NULL,
+    ram_gb              INTEGER NOT NULL,
+    ssd_gb              INTEGER NOT NULL,
+    price_zar           DECIMAL(10,2) NOT NULL,
+    source              VARCHAR(50) NOT NULL,
+    source_url          TEXT,
+    scraped_at          TIMESTAMP NOT NULL,
+    is_verified         BOOLEAN DEFAULT FALSE,
+    created_at          TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX idx_market_prices_model ON market_prices(model, ram_gb, ssd_gb);
+CREATE INDEX idx_market_prices_scraped ON market_prices(scraped_at);
+
+5.3 QUOTES TABLE
+────────────────────────────────────────────────────────────────────────────────
+CREATE TABLE quotes (
+    id                  UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    device_id           UUID REFERENCES devices(id),
+    quoted_price        DECIMAL(10,2) NOT NULL,
+    base_market_price   DECIMAL(10,2),
+    velocity_adjustment DECIMAL(5,2),
+    margin_override     DECIMAL(5,2),
+    quoted_by           UUID REFERENCES users(id),
+    valid_until         TIMESTAMP NOT NULL,
+    status              VARCHAR(20) DEFAULT 'pending',
+    created_at          TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+5.4 API_KEYS TABLE
+────────────────────────────────────────────────────────────────────────────────
+CREATE TABLE api_keys (
+    id                  UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    key_hash            VARCHAR(255) NOT NULL UNIQUE,
+    name                VARCHAR(100) NOT NULL,
+    created_by          UUID REFERENCES users(id),
+    expires_at          TIMESTAMP NOT NULL,
+    is_active           BOOLEAN DEFAULT TRUE,
+    last_used_at        TIMESTAMP,
+    created_at          TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+5.5 CUSTOMERS TABLE (POPIA Compliance)
+────────────────────────────────────────────────────────────────────────────────
+CREATE TABLE customers (
+    id                  UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    email_encrypted     BYTEA NOT NULL,
+    phone_encrypted     BYTEA,
+    name_encrypted      BYTEA,
+    consent_given       BOOLEAN DEFAULT FALSE,
+    consent_date        TIMESTAMP,
+    created_at          TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Note: PII fields encrypted using Fernet symmetric encryption
+
+5.6 PRICE_HISTORY TABLE
+────────────────────────────────────────────────────────────────────────────────
+CREATE TABLE price_history (
+    id                  UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    device_id           UUID REFERENCES devices(id),
+    price_zar           DECIMAL(10,2) NOT NULL,
+    reason              VARCHAR(50),
+    changed_by          UUID REFERENCES users(id),
+    created_at          TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+================================================================================
+6. API ENDPOINT SPECIFICATIONS
+================================================================================
+
+6.1 AUTHENTICATION ENDPOINTS
+────────────────────────────────────────────────────────────────────────────────
+POST /api/v1/auth/validate
+    Description: Validate API key
+    Headers: Authorization: Bearer <api_key>
+    Response: 200 OK if valid, 401 Unauthorized if invalid
+
+POST /api/v1/auth/keys
+    Description: Create new API key
+    Auth: Admin required
+    Body: { "name": "string", "expires_in_days": 90 }
+    Response: { "key": "sk_xxx...", "expires_at": "ISO8601" }
+
+DELETE /api/v1/auth/keys/{key_id}
+    Description: Revoke API key
+    Auth: Admin required
+
+6.2 INVENTORY ENDPOINTS
+────────────────────────────────────────────────────────────────────────────────
+POST /api/v1/inventory
+    Description: Create new device record
+    Auth: API Key required
+    Body:
+    {
+        "serial_number": "1LW10Y2",
+        "make": "Dell",
+        "model": "Inspiron 3580",
+        "processor": "i5-8265U",
+        "ram_gb": 8,
+        "ssd_gb": 256,
+        "condition_grade": "Grade A",
+        "status": "Intake",
+        "date_received": "2026-04-01",
+        "cost_price": 4500.00
+    }
+    Response: Device object with id
+
+GET /api/v1/inventory
+    Description: List devices with pagination and filters
+    Query Params: 
+        - page: int (default 1)
+        - per_page: int (default 20)
+        - status: string (optional)
+        - make: string (optional)
+        - search: string (optional)
+    Response: Paginated list of devices
+
+GET /api/v1/inventory/{device_id}
+    Description: Get device details
+    Response: Full device object with price history
+
+PUT /api/v1/inventory/{device_id}
+    Description: Update device record
+    Body: Fields to update (partial update supported)
+
+DELETE /api/v1/inventory/{device_id}
+    Description: Soft delete device
+    Response: { "message": "Device deleted" }
+
+6.3 PRICE CHECK ENDPOINT (CORE FEATURE)
+────────────────────────────────────────────────────────────────────────────────
+POST /api/v1/price-check
+    Description: Get dynamic pricing for a device by serial number
+    Auth: API Key required
+    Content-Type: application/json
+    
+    Request Body:
+    {
+        "serial_number": "1LW10Y2",
+        "include_warranty": true,
+        "margin_override": null
+    }
+    
+    Success Response (200 OK):
+    {
+        "status": "success",
+        "device": {
+            "serial": "1LW10Y2",
+            "model": "Dell Inspiron 3580",
+            "specs": {
+                "cpu": "i5-8265U",
+                "ram": "8GB",
+                "ssd": "256GB",
+                "condition": "Grade A Refurbished"
+            },
+            "inventory_status": "ready",
+            "days_in_stock": 14
+        },
+        "pricing": {
+            "base_market_price_zar": 6500,
+            "velocity_adjustment": 0,
+            "velocity_adjustment_percent": "0%",
+            "final_price_zar": 6500,
+            "currency": "ZAR",
+            "warranty_months": 3,
+            "margin_percent": 30
+        },
+        "client_snippet": "We have the Dell Inspiron 3580 (Serial: 1LW10Y2) 
+                          available for R6,500. Includes 3-month warranty and 
+                          full quality inspection.",
+        "quote_valid_until": "2026-04-08T23:59:59+02:00"
+    }
+    
+    Error Response (400 Bad Request):
+    {
+        "status": "error",
+        "code": "DEVICE_NOT_READY",
+        "message": "Serial number found but status is 'BER' 
+                    (Beyond Economic Repair).",
+        "suggested_action": "Offer parts valuation or trade-in.",
+        "parts_value_zar": 1500
+    }
+    
+    Error Response (404 Not Found):
+    {
+        "status": "error",
+        "code": "SERIAL_NOT_FOUND",
+        "message": "No device found with serial number '1LW10Y2'"
+    }
+
+6.4 MARKET DATA ENDPOINTS
+────────────────────────────────────────────────────────────────────────────────
+GET /api/v1/market/prices
+    Description: Get cached market prices
+    Query Params: model, ram_gb, ssd_gb (optional filters)
+    
+POST /api/v1/market/refresh
+    Description: Trigger manual market data refresh
+    Auth: Admin required
+
+GET /api/v1/market/status
+    Description: Get scraper health status
+    Response: Last run times, success/failure counts
+
+6.5 QUOTE ENDPOINTS
+────────────────────────────────────────────────────────────────────────────────
+POST /api/v1/quotes
+    Description: Generate and store a quote
+    Body:
+    {
+        "device_id": "uuid",
+        "price": 6500,
+        "valid_days": 7,
+        "template": "formal"
+    }
+    Response: Quote object with PDF URL
+
+GET /api/v1/quotes/{quote_id}
+    Description: Get quote details
+
+POST /api/v1/quotes/{quote_id}/send
+    Description: Send quote via email
+    Body: { "recipient_email": "customer@example.co.za" }
+
+6.6 REPORTS ENDPOINTS
+────────────────────────────────────────────────────────────────────────────────
+GET /api/v1/reports/inventory-velocity
+    Description: Get inventory aging report
+    Query Params: days_threshold (default 30)
+    
+GET /api/v1/reports/margins
+    Description: Get margin analysis by category
+    Query Params: start_date, end_date
+    
+GET /api/v1/reports/sales
+    Description: Get sales performance report
+
+================================================================================
+7. FILE DEPENDENCIES & REQUIREMENTS
+================================================================================
+
+7.1 REQUIREMENTS.TXT
+────────────────────────────────────────────────────────────────────────────────
+# Core Framework
+fastapi==0.104.1
+uvicorn[standard]==0.24.0
+python-multipart==0.0.6
+
+# Database
+sqlalchemy[asyncio]==2.0.23
+asyncpg==0.29.0
+alembic==1.12.1
+psycopg2-binary==2.9.9
+
+# Validation & Serialization
+pydantic==2.5.2
+pydantic-settings==2.1.0
+
+# Authentication
+python-jose[cryptography]==3.3.0
+passlib[bcrypt]==1.7.4
+bcrypt==4.1.1
+
+# Web Scraping
+httpx==0.25.2
+beautifulsoup4==4.12.2
+lxml==4.9.3
+selenium==4.15.2
+webdriver-manager==4.0.1
+
+# Utilities
+tenacity==8.2.3
+python-dateutil==2.8.2
+pytz==2023.3
+
+# Logging & Monitoring
+structlog==23.2.0
+
+# Testing (dev)
+pytest==7.4.3
+pytest-asyncio==0.21.1
+pytest-cov==4.1.0
+httpx==0.25.2
+
+# Frontend
+streamlit==1.28.2
+plotly==5.18.0
+
+7.2 REQUIREMENTS-DEV.TXT
+────────────────────────────────────────────────────────────────────────────────
+-r requirements.txt
+
+# Development Tools
+black==23.11.0
+flake8==6.1.0
+mypy==1.7.1
+isort==5.12.0
+
+# Testing
+pytest==7.4.3
+pytest-asyncio==0.21.1
+pytest-cov==4.1.0
+factory-boy==3.3.0
+
+# Debugging
+ipdb==0.13.13
+
+7.3 ENVIRONMENT VARIABLES (.env)
+────────────────────────────────────────────────────────────────────────────────
+# Database
+DATABASE_URL=postgresql://user:password@localhost:5432/refurbadmin_ai
+DATABASE_POOL_SIZE=10
+DATABASE_MAX_OVERFLOW=20
+
+# Security
+SECRET_KEY=<32-byte-random-secret>
+API_KEY_PREFIX=sk_live_
+ENCRYPTION_KEY=<fernet-key-for-PII>
+
+# Application
+APP_ENV=production
+TIMEZONE=Africa/Johannesburg
+CURRENCY=ZAR
+
+# Scraping
+SCRAPER_USER_AGENT=RefurbAdmin/1.0
+SCRAPER_DELAY_MIN=1
+SCRAPER_DELAY_MAX=3
+MAX_CONCURRENT_SCRAPERS=5
+
+# Email (optional)
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_USER=<email>
+SMTP_PASSWORD=<app-password>
+
+# AWS (optional)
+AWS_REGION=af-south-1
+AWS_ACCESS_KEY_ID=<key>
+AWS_SECRET_ACCESS_KEY=<secret>
+
+7.4 RUN_APP.BAT (Windows Launcher)
+────────────────────────────────────────────────────────────────────────────────
+@echo off
+REM RefurbAdmin AI - Application Launcher
+REM Creates virtual environment and runs the application
+
+echo ============================================
+echo   RefurbAdmin AI - Startup
+echo ============================================
+
+REM Check if virtual environment exists
+if not exist ".venv" (
+    echo Creating virtual environment...
+    python -m venv .venv
+    if errorlevel 1 (
+        echo ERROR: Failed to create virtual environment
+        echo Please ensure Python 3.11+ is installed
+        pause
+        exit /b 1
+    )
+)
+
+REM Activate virtual environment
+call .venv\Scripts\activate.bat
+
+REM Install dependencies
+echo Installing dependencies...
+pip install -r requirements.txt --quiet
+
+REM Run database migrations
+echo Running database migrations...
+python -m alembic upgrade head
+
+REM Start the application
+echo Starting RefurbAdmin AI...
+echo Server will be available at: http://localhost:8000
+echo API Documentation: http://localhost:8000/docs
+echo ============================================
+
+uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+
+pause
+
+================================================================================
+8. TESTING STRATEGY
+================================================================================
+
+8.1 TESTING PYRAMID
+────────────────────────────────────────────────────────────────────────────────
+
+                    ┌─────────────┐
+                    │   E2E       │  10% (Frontend flows)
+                    │   Tests     │
+                   ─┴─────────────┴─
+                  ╱                 ╲
+                 ╱   Integration     ╲  30% (API + DB)
+                ╱      Tests          ╲
+               ─────────────────────────
+              ╱                           ╲
+             ╱      Unit Tests             ╲  60% (Services, Utils)
+            ╱                               ╲
+           ───────────────────────────────────
+
+8.2 UNIT TESTS
+────────────────────────────────────────────────────────────────────────────────
+Location: tests/test_services/, tests/test_utils/
+
+Test Coverage:
+├── Pricing Service
+│   ├── test_calculate_base_price()
+│   ├── test_apply_velocity_modifier_slow()
+│   ├── test_apply_velocity_modifier_high_demand()
+│   ├── test_round_to_retail()
+│   └── test_calculate_margin()
+│
+├── Inventory Service
+│   ├── test_get_device_by_serial()
+│   ├── test_update_device_status()
+│   ├── test_calculate_days_in_stock()
+│   └── test_check_serial_exists()
+│
+├── Validators
+│   ├── test_validate_serial_number()
+│   ├── test_validate_price()
+│   └── test_validate_date()
+│
+└── Formatters
+    ├── test_format_currency_zar()
+    ├── test_format_snippet()
+    └── test_format_date_sast()
+
+Tools: pytest, pytest-asyncio, pytest-cov
+Target Coverage: 80%+
+
+8.3 INTEGRATION TESTS
+────────────────────────────────────────────────────────────────────────────────
+Location: tests/test_api/
+
+Test Coverage:
+├── Price Check API
+│   ├── test_price_check_valid_serial()
+│   ├── test_price_check_serial_not_found()
+│   ├── test_price_check_device_not_ready()
+│   ├── test_price_check_ber_status()
+│   ├── test_price_check_with_margin_override()
+│   └── test_price_check_response_time()
+│
+├── Inventory API
+│   ├── test_create_device()
+│   ├── test_get_device_list()
+│   ├── test_update_device()
+│   └── test_delete_device()
+│
+├── Authentication
+│   ├── test_valid_api_key()
+│   ├── test_invalid_api_key()
+│   └── test_expired_api_key()
+│
+└── Market Data API
+    ├── test_get_market_prices()
+    └── test_refresh_market_data()
+
+Test Database: PostgreSQL test instance (docker)
+Fixtures: conftest.py with test data seeding
+
+8.4 END-TO-END TESTS
+────────────────────────────────────────────────────────────────────────────────
+Location: tests/test_e2e/
+
+Test Scenarios:
+├── Complete Price Check Flow
+│   1. Create device via API
+│   2. Update status to "Ready"
+│   3. Request price check
+│   4. Verify response format
+│   └── 5. Generate quote
+│
+├── Dashboard User Flow
+│   1. Login to dashboard
+│   2. Search device by serial
+│   3. View pricing breakdown
+│   4. Copy client snippet
+│   └── 5. Send quote email
+│
+└── Inventory Intake Flow
+    1. Receive new device
+    2. Enter serial and specs
+    3. Update through diagnosis
+    4. Mark as ready
+    └── 5. Verify pricing updated
+
+Tools: pytest, selenium (for browser tests)
+
+8.5 PERFORMANCE TESTS
+────────────────────────────────────────────────────────────────────────────────
+Location: tests/test_performance/
+
+Test Scenarios:
+├── Response Time
+│   ├── /api/v1/price-check < 2 seconds (p95)
+│   ├── /api/v1/inventory < 500ms (p95)
+│   └── Dashboard load < 3 seconds
+│
+├── Load Testing
+│   ├── 100 concurrent requests
+│   ├── 1000 requests/minute sustained
+│   └── Database connection pool exhaustion test
+│
+└── Scalability
+    ├── 5000 device records query performance
+    └── Market price cache lookup performance
+
+Tools: locust, pytest-benchmark
+
+8.6 SECURITY TESTS
+────────────────────────────────────────────────────────────────────────────────
+Test Coverage:
+├── Authentication
+│   ├── API key validation
+│   ├── Key expiration enforcement
+│   └── Unauthorized access prevention
+│
+├── Input Validation
+│   ├── SQL injection prevention
+│   ├── XSS prevention
+│   └── Path traversal prevention
+│
+├── Data Protection
+│   ├── PII encryption verification
+│   ├── Secure logging (no PII in logs)
+│   └── HTTPS enforcement
+│
+└── Rate Limiting
+    ├── API rate limit enforcement
+    └── Scraper rate limit compliance
+
+================================================================================
+9. DEPLOYMENT CONSIDERATIONS (SOUTH AFRICAN CONTEXT)
+================================================================================
+
+9.1 HOSTING OPTIONS
+────────────────────────────────────────────────────────────────────────────────
+
+OPTION A: Local Server (Recommended for small operations)
+├── Hardware: Dedicated Windows Server or Linux machine
+├── Location: On-premises at business location
+├── Pros: Full control, no latency, data sovereignty
+├── Cons: Requires IT maintenance, backup responsibility
+└── Cost: One-time hardware cost (~R15,000-R30,000)
+
+OPTION B: AWS Cape Town Region (af-south-1)
+├── Service: EC2 + RDS (PostgreSQL)
+├── Location: AWS Cape Town datacenter
+├── Pros: Managed infrastructure, automatic backups, scalable
+├── Cons: Monthly cost, internet dependency
+└── Cost Estimate:
+    ├── EC2 t3.medium: ~R800/month
+    ├── RDS PostgreSQL db.t3.small: ~R1,200/month
+    ├── Data transfer: ~R200/month
+    └── Total: ~R2,200/month
+
+OPTION C: Local SA Hosting Providers
+├── Providers: Hetzner SA, Domains.co.za, Xneelo
+├── Location: Johannesburg/Cape Town datacenters
+├── Pros: Local support, ZAR billing, good latency
+└── Cost: R500-R1,500/month depending on specs
+
+9.2 POPIA COMPLIANCE
+────────────────────────────────────────────────────────────────────────────────
+
+Data Protection Requirements:
+├── Encryption at Rest
+│   ├── PII fields encrypted using Fernet (256-bit AES)
+│   ├── Database-level encryption enabled
+│   └── Backup files encrypted
+│
+├── Encryption in Transit
+│   ├── HTTPS mandatory (TLS 1.3)
+│   ├── API keys transmitted securely
+│   └── No unencrypted data transmission
+│
+├── Access Control
+│   ├── Role-based access (Admin, Technician, Sales)
+│   ├── API key rotation every 90 days
+│   ├── Audit logging of all data access
+│   └── Session timeout after 30 minutes
+│
+├── Data Minimization
+│   ├── Only collect necessary customer data
+│   ├── Consent tracking for communications
+│   └── Data retention policies implemented
+│
+└── Rights Management
+    ├── Customer data export capability
+    ├── Right to deletion implementation
+    └── Consent withdrawal process
+
+9.3 LOCALIZATION
+────────────────────────────────────────────────────────────────────────────────
+
+South African Specifics:
+├── Currency: ZAR (R) with proper formatting
+│   └── Format: R6,500.00 (not R 6500 or 6,500R)
+│
+├── Timezone: Africa/Johannesburg (SAST, UTC+2)
+│   └── No daylight saving time
+│
+├── Date Format: YYYY-MM-DD (ISO) for storage
+│   └── Display: DD/MM/YYYY for users
+│
+├── Phone Format: +27 XX XXX XXXX
+│   └── Validation for SA mobile numbers
+│
+├── Retailers: PriceCheck, Takealot, Gumtree SA
+│   └── Scrapers configured for .co.za domains
+│
+└── Business Hours: 08:00-17:00 SAST
+    └── Monitoring alerts during business hours
+
+9.4 LOAD SHEDDING CONTINGENCY
+────────────────────────────────────────────────────────────────────────────────
+
+Power Outage Preparedness:
+├── UPS: Minimum 2-hour battery backup for server
+├── Generator: Business generator integration
+├── Auto-shutdown: Graceful shutdown script on low battery
+├── Data Integrity: Transaction logging to prevent corruption
+└── Cloud Backup: Hourly backups to cloud storage
+
+9.5 MONITORING & ALERTING
+────────────────────────────────────────────────────────────────────────────────
+
+Monitoring Stack:
+├── Application: Prometheus + Grafana
+├── Logs: Structured logging with ELK stack (optional)
+└── Uptime: UptimeRobot or Pingdom
+
+Alerts Configuration:
+├── API Response Time > 2 seconds
+├── Scraper Failures (2 consecutive days)
+├── Database Connection Errors
+├── Disk Space < 20%
+├── API Key Expiry (7 days warning)
+└── Backup Failures
+
+Notification Channels:
+├── Email: Admin email addresses
+├── SMS: Critical alerts via Twilio/BulkSMS
+└── WhatsApp: Optional business integration
+
+9.6 BACKUP STRATEGY
+────────────────────────────────────────────────────────────────────────────────
+
+Backup Schedule:
+├── Database: Hourly incremental, daily full
+├── Application: Weekly full backup
+└── Configuration: On-change backup
+
+Retention:
+├── Daily backups: 7 days
+├── Weekly backups: 4 weeks
+└── Monthly backups: 12 months
+
+Storage:
+├── Local: On-server backup directory
+├── Off-site: AWS S3 or Azure Blob (encrypted)
+└── Recovery Testing: Monthly restore test
+
+================================================================================
+10. RISK REGISTER & MITIGATION
+================================================================================
+
+| Risk ID | Risk Description              | Impact | Probability | Mitigation                    |
+|---------|-------------------------------|--------|-------------|-------------------------------|
+| R001    | Data Mismatch                 | High   | Medium      | Manual verification step for  |
+|         | Wrong price due to incorrect  |        |             | all INVD records before       |
+|         | serial/spec link              |        |             | go-live; reconciliation report|
+|---------|-------------------------------|--------|-------------|-------------------------------|
+| R002    | Market Data Staleness         | Medium | Medium      | Cache expiry 24 hours; alert  |
+|         | Outdated prices from scraper  |        |             | admin if scraper fails 2      |
+|         | failure                       |        |             | consecutive days              |
+|---------|-------------------------------|--------|-------------|-------------------------------|
+| R003    | POPIA Violation               | High   | Low         | Encrypt PII; limit API access |
+|         | Customer data leaked          |        |             | to internal IPs; log all      |
+|         |                               |        |             | access; regular audits        |
+|---------|-------------------------------|--------|-------------|-------------------------------|
+| R004    | Velocity Errors               | Medium | Low         | Hard limits on discounts      |
+|         | Discounting high-demand items |        |             | (max 15%); manager approval   |
+|         | accidentally                  |        |             | for overrides                 |
+|---------|-------------------------------|--------|-------------|-------------------------------|
+| R005    | Load Shedding                 | High   | High        | UPS backup; graceful shutdown |
+|         | Power outage causes data loss |        |             | scripts; cloud sync           |
+|---------|-------------------------------|--------|-------------|-------------------------------|
+| R006    | API Key Compromise            | High   | Low         | 90-day rotation; hashed       |
+|         | Unauthorized API access       |        |             | storage; audit logging        |
+|---------|-------------------------------|--------|-------------|-------------------------------|
+| R007    | Scraper Blocking              | Medium | Medium      | Rate limiting; user-agent     |
+|         | Retailers block scrapers      |        |             | rotation; fallback to manual  |
+|         |                               |        |             | price entry                 |
+|---------|-------------------------------|--------|-------------|-------------------------------|
+| R008    | Performance Degradation       | Medium | Low         | Query optimization; indexes;  |
+|         | Slow response with growth     |        |             | connection pooling; caching   |
+|---------|-------------------------------|--------|-------------|-------------------------------|
+
+================================================================================
+11. SUCCESS METRICS & KPIs
+================================================================================
+
+11.1 OPERATIONAL METRICS
+────────────────────────────────────────────────────────────────────────────────
+
+| Metric                      | Baseline    | Target      | Measurement Method        |
+|-----------------------------|-------------|-------------|---------------------------|
+| Quote Generation Time       | ~15 minutes | < 30 sec    | API response timestamp    |
+| API Response Time (p95)     | N/A         | < 2 seconds | Prometheus metrics        |
+| System Uptime               | N/A         | 99.9%       | Uptime monitoring         |
+| Scraper Success Rate        | N/A         | > 95%       | Scraper logs              |
+
+11.2 BUSINESS METRICS
+────────────────────────────────────────────────────────────────────────────────
+
+| Metric                      | Baseline    | Target      | Measurement Method        |
+|-----------------------------|-------------|-------------|---------------------------|
+| Gross Margin                | Variable    | > 25%       | Margin reports            |
+| Inventory Turnover (days)   | 45 days     | 30 days     | Inventory velocity report |
+| Serial Number Accuracy      | < 80%       | > 95%       | Data quality audit        |
+| Quote-to-Sale Conversion    | Unknown     | Track &     | Quote status tracking     |
+|                             |             | improve     |                           |
+
+11.3 DATA QUALITY METRICS
+────────────────────────────────────────────────────────────────────────────────
+
+| Metric                      | Baseline    | Target      | Measurement Method        |
+|-----------------------------|-------------|-------------|---------------------------|
+| Records with Valid Serial   | Unknown     | > 95%       | Database query            |
+| INVD Records Resolved       | 100%        | < 5%        | Reconciliation report     |
+| Duplicate Serials           | Unknown     | 0           | Uniqueness constraint     |
+| Data Completeness Score     | Unknown     | > 90%       | Null field analysis       |
+
+11.4 USER ADOPTION METRICS
+────────────────────────────────────────────────────────────────────────────────
+
+| Metric                      | Target      | Measurement Method        |
+|-----------------------------|-------------|---------------------------|
+| Daily Active Users          | Track       | Login/session logs        |
+| API Calls per Day           | Track       | API request logs          |
+| Price Check Usage           | > 80% of    | Endpoint usage analytics  |
+|                             | quotes      |                           |
+| Manual Override Rate        | < 10%       | Override audit log        |
+| User Satisfaction Score     | > 4/5       | Staff survey              |
+
+================================================================================
+                            END OF BUILD PLAN
+================================================================================
+
+Document Control:
+- Author: Senior Software Architect
+- Version: 1.0
+- Date: 01 April 2026
+- Review Date: After Phase 1 completion
+- Distribution: Development Team, Management
+
+Next Steps:
+1. Review and approve this build plan
+2. Set up development environment
+3. Begin Phase 1: Data Migration
+4. Schedule weekly progress reviews
+
+For questions or clarifications, refer to the PRD (prd.txt) or
+contact the project stakeholder.
+
+================================================================================

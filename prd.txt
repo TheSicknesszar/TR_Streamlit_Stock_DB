@@ -1,0 +1,262 @@
+# Product Requirements Document (PRD)
+## Project Name: RefurbAdmin AI – Inventory & Pricing Automation Platform
+**Version:** 1.0  
+**Date:** October 26, 2023  
+**Region:** South Africa (ZAR)  
+**Status:** Draft for Review  
+
+---
+
+## 1. Executive Summary
+**RefurbAdmin AI** is a comprehensive administrative assistant platform designed for an IT repair and laptop refurbishment business. The system automates inventory tracking, dynamic pricing based on local market conditions, and client communication. 
+
+A core differentiator is the **Smart Pricing Engine**, which includes a `/api/price-check` endpoint. This allows staff to input a device serial number and instantly receive a validated, market-adjusted sales quote based on real-time inventory levels and South African market data.
+
+---
+
+## 2. Problem Statement
+- **Manual Pricing:** Current pricing relies on manual research, leading to inconsistencies and margin erosion.
+- **Inventory Silos:** Device serial numbers (`Device Serial Numbers.csv`) are not fully reconciled with stock status (`stock_tracking_*.csv`), making it hard to know what is actually sellable.
+- **Slow Quoting:** Generating client quotes requires multiple steps (checking stock, checking market, calculating margin), delaying sales.
+- **Data Integrity:** Many inventory records lack specific serial numbers (marked as "INVD"), hindering traceability.
+
+---
+
+## 3. Goals & Objectives
+1. **Centralize Inventory:** Merge serial number intake with stock tracking into a single source of truth.
+2. **Automate Pricing:** Implement dynamic pricing logic based on local ZA market data and inventory velocity.
+3. **Accelerate Sales:** Reduce quote generation time from ~15 minutes to <30 seconds via API.
+4. **Ensure Compliance:** Adhere to South African POPIA regulations for data handling.
+
+---
+
+## 4. User Personas
+| Persona | Role | Needs |
+|---------|------|-------|
+| **Admin/Sales** | Front-line staff | Quick access to prices, ability to generate quotes via serial number. |
+| **Technician** | Repair Staff | Update device status (e.g., `ready` → `BER`), log parts used. |
+| **Manager** | Business Owner | View margin reports, inventory velocity, pricing overrides. |
+| **Client** | End Customer | Receive clear, professional quotes with warranty info. |
+
+---
+
+## 5. Functional Requirements
+
+### 5.1 Core Inventory Management
+- **FR-01:** System must ingest and reconcile data from `Device Serial Numbers.csv` and `stock_tracking_*.csv`.
+- **FR-02:** Each inventory item must have a unique identifier (Serial Number or Internal Asset ID).
+- **FR-03:** Status tracking must include: `Intake`, `Diagnosis`, `Waiting Parts`, `Ready`, `Sold`, `BER` (Beyond Economic Repair), `Strip for Parts`.
+- **FR-04:** Track `date_received` for every unit to calculate inventory velocity (days in stock).
+
+### 5.2 Smart Pricing Engine (`local_device_pricing_analyzer`)
+- **FR-05:** System must scrape/query local SA retailers (e.g., PriceCheck, Takealot, Gumtree) for comparable models.
+- **FR-06:** Pricing algorithm must calculate a **Base Market Price** (median of verified listings).
+- **FR-07:** System must apply **Inventory Velocity Modifiers**:
+  - **Slow Moving (>30 days):** Auto-apply discount (5–15%).
+  - **High Demand (<5 units stock):** Auto-apply premium (5–10%).
+- **FR-08:** Prices must be rounded to retail psychology standards (e.g., R7,250 / R7,999).
+
+### 5.3 Client Communication Module
+- **FR-09:** Generate email templates based on status (Repair Update, Quote, Follow-up).
+- **FR-10:** Templates must include warranty terms (e.g., 90-day warranty on refurbished).
+- **FR-11:** Support tone variations (Formal, Friendly, Urgent).
+
+### 5.4 **Feature Spotlight: `/api/price-check`**
+- **FR-12:** Endpoint must accept a `serial_number` as input.
+- **FR-13:** Endpoint must validate the serial against the unified inventory database.
+- **FR-14:** If valid and `status == ready`, return a JSON quote with dynamic pricing.
+- **FR-15:** If `status == BER` or `strip_for_parts`, return "Parts Only" valuation or "Not for Sale".
+- **FR-16:** Response must include a client-ready text snippet for copy-pasting into emails/WhatsApp.
+
+---
+
+## 6. API Specification: `/api/price-check`
+
+### 6.1 Endpoint Details
+- **Method:** `POST`
+- **Path:** `/api/v1/price-check`
+- **Auth:** Bearer Token (Admin API Key)
+- **Content-Type:** `application/json`
+
+### 6.2 Request Payload
+```json
+{
+  "serial_number": "1LW10Y2",
+  "include_warranty": true,
+  "margin_override": null 
+}
+```
+
+### 6.3 Response Success (200 OK)
+```json
+{
+  "status": "success",
+  "device": {
+    "serial": "1LW10Y2",
+    "model": "Dell Inspiron 3580",
+    "specs": {
+      "cpu": "i5-8265U",
+      "ram": "8GB",
+      "ssd": "256GB",
+      "condition": "Grade A Refurbished"
+    },
+    "inventory_status": "ready",
+    "days_in_stock": 14
+  },
+  "pricing": {
+    "base_market_price_zar": 6500,
+    "velocity_adjustment": 0,
+    "final_price_zar": 6500,
+    "currency": "ZAR",
+    "warranty_months": 3
+  },
+  "client_snippet": "We have the Dell Inspiron 3580 (Serial: 1LW10Y2) available for R6,500. Includes 3-month warranty and full quality inspection.",
+  "quote_valid_until": "2023-11-02T23:59:59Z"
+}
+```
+
+### 6.4 Response Error (404 Not Found / 400 Bad Request)
+```json
+{
+  "status": "error",
+  "code": "DEVICE_NOT_READY",
+  "message": "Serial number found but status is 'BER' (Beyond Economic Repair).",
+  "suggested_action": "Offer parts valuation or trade-in."
+}
+```
+
+---
+
+## 7. Data Model & Schema Strategy
+
+To support the API, the existing CSVs must be migrated to a relational database (e.g., PostgreSQL).
+
+### 7.1 Unified Inventory Table (`devices`)
+| Column | Type | Description | Source Mapping |
+|--------|------|-------------|----------------|
+| `id` | UUID | Primary Key | New |
+| `serial_number` | String | Unique Device Serial | `Device Serial Numbers.csv` / `stock_tracking` |
+| `make` | String | Brand (Dell, HP) | `stock_tracking` |
+| `model` | String | Model Name | `stock_tracking` |
+| `processor` | String | CPU Specs | `stock_tracking` |
+| `ram_gb` | Integer | Memory | `stock_tracking` |
+| `ssd_gb` | Integer | Storage | `stock_tracking` |
+| `condition_grade` | Enum | A, B, C, BER, Parts | `stock_tracking` (condition) |
+| `status` | Enum | Intake, Ready, Sold, BER | `stock_tracking` (status) |
+| `date_received` | Date | Intake Date | New (Required for velocity) |
+| `cost_price` | Decimal | Internal Cost | New |
+| `sale_price` | Decimal | Current Listed Price | Calculated |
+
+### 7.2 Data Reconciliation Plan
+1. **Match:** Attempt to match `Device Serial Numbers.csv` serials to `stock_tracking` rows using Model/Make as a secondary key where serials are missing ("INVD").
+2. **Flag:** Mark unmatched records for manual review.
+3. **Enforce:** New intake processes must require Serial Number entry before generating a `stock_tracking` record.
+
+---
+
+## 8. Non-Functional Requirements
+- **NFR-01 (Performance):** `/api/price-check` must return a response within <2 seconds.
+- **NFR-02 (Security):** All API traffic must be HTTPS. API keys must be rotated every 90 days.
+- **NFR-03 (Compliance):** Customer data linked to serials must be encrypted at rest (POPIA compliance).
+- **NFR-04 (Availability):** 99.9% uptime during business hours (08:00–17:00 SAST).
+- **NFR-05 (Scalability):** Support up to 5,000 inventory records without performance degradation.
+
+---
+
+## 9. Technical Stack Recommendation
+| Component | Technology | Reason |
+|-----------|------------|--------|
+| **Backend** | Python (FastAPI) | High performance, easy integration with data analysis libs (pandas). |
+| **Database** | PostgreSQL | Robust relational data handling for inventory. |
+| **Frontend** | React / Streamlit | Internal dashboard for staff to view pricing/logs. |
+| **Pricing Data** | Web Scrapers (BeautifulSoup/Selenium) | To gather local market data (PriceCheck, etc.). |
+| **Hosting** | Local Server or AWS Cape Town Region | Low latency for SA users, data sovereignty. |
+
+---
+
+## 10. Workflow Diagrams (Text Description)
+
+### 10.1 Price Check Workflow
+1. **Staff** enters Serial Number into Admin Dashboard / API Client.
+2. **System** queries `devices` table.
+3. **Decision:** Is status `ready`?
+   - **No:** Return Error/Parts Value.
+   - **Yes:** Proceed.
+4. **System** calculates `days_in_stock`.
+5. **System** queries `market_prices` cache (updated daily).
+6. **Algorithm** applies velocity modifier (Discount/Premium).
+7. **System** generates JSON + Text Snippet.
+8. **Staff** copies snippet to Client Email/WhatsApp.
+
+### 10.2 Inventory Intake Workflow
+1. **Device Received** → Scan/Enter Serial Number.
+2. **System** checks if Serial exists in `Device Serial Numbers.csv` master list.
+3. **Tech** enters Specs (CPU, RAM, SSD) & Condition.
+4. **System** sets status `Diagnosis`.
+5. **Tech** updates status to `Ready` upon completion.
+6. **System** triggers pricing update for this SKU.
+
+---
+
+## 11. Roadmap & Milestones
+
+| Phase | Duration | Deliverables |
+|-------|----------|--------------|
+| **Phase 1: Data Migration** | 2 Weeks | DB Schema setup, CSV reconciliation, Serial Number cleanup. |
+| **Phase 2: Core API** | 3 Weeks | Build `/api/price-check`, Inventory CRUD, Auth system. |
+| **Phase 3: Pricing Engine** | 3 Weeks | Web scrapers, Market data caching, Velocity logic implementation. |
+| **Phase 4: Frontend Dashboard** | 3 Weeks | Staff UI for manual overrides, Quote generation view. |
+| **Phase 5: Testing & Launch** | 2 Weeks | UAT, Security Audit, Staff Training. |
+
+---
+
+## 12. Risks & Mitigation
+
+| Risk | Impact | Mitigation |
+|------|--------|------------|
+| **Data Mismatch** | API returns wrong price due to incorrect serial/spec link. | Implement manual verification step for all "INVD" records before go-live. |
+| **Market Data Staleness** | Prices outdated due to scraper failure. | Cache expiry set to 24 hours; alert admin if scraper fails 2 consecutive days. |
+| **POPIA Violation** | Legal risk if customer data leaked. | Encrypt PII; limit API access to internal IPs; log all access. |
+| **Inventory Velocity Errors** | Discounting high-demand items accidentally. | Set hard limits on discounts (max 15%); require manager approval for overrides. |
+
+---
+
+## 13. Success Metrics (KPIs)
+1. **Quote Speed:** Average time to generate quote < 30 seconds.
+2. **Margin Health:** Average gross margin maintained above 25% after dynamic adjustments.
+3. **Inventory Turnover:** Reduce average days-in-stock for "Ready" items from 45 to 30 days.
+4. **Data Accuracy:** 95% of inventory records have valid, verified Serial Numbers.
+
+---
+
+## 14. Appendix: Example Logic for Velocity Adjustment
+*To be implemented in the Pricing Engine Module.*
+
+```python
+# Pseudo-code for /api/price-check logic
+def get_price(serial):
+    device = db.get_device(serial)
+    if device.status != 'ready':
+        return error("Not available for sale")
+    
+    # Get Base Market Price (from daily cached data)
+    base_price = market_data.get_median(device.model, device.ram, device.ssd)
+    
+    # Calculate Velocity
+    similar_stock_count = db.count_similar(device.model, device.ram, device.ssd, status='ready')
+    days_in_stock = (today - device.date_received).days
+    
+    adjustment = 0
+    if days_in_stock > 30 and similar_stock_count > 5:
+        adjustment = -0.10  # 10% Discount
+    elif similar_stock_count < 3:
+        adjustment = 0.05   # 5% Premium
+        
+    final_price = round_to_retail(base_price * (1 + adjustment))
+    return generate_quote(device, final_price)
+```
+
+---
+
+**Approved By:** ___________________  
+**Date:** ___________________

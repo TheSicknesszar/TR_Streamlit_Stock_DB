@@ -1,0 +1,24 @@
+# Development dependencies for RefurbAdmin AI
+
+# Core dependencies (includes all from requirements.txt)
+-r requirements.txt
+
+# Development tools
+pytest==8.0.0
+pytest-asyncio==0.23.4
+pytest-cov==4.1.0
+pytest-mock==3.12.0
+
+# Code quality
+black==24.1.1
+isort==5.13.2
+flake8==7.0.0
+mypy==1.8.0
+
+# Debugging
+ipdb==0.13.13
+pdbpp==0.10.3
+
+# Documentation
+mkdocs==1.5.3
+mkdocs-material==9.5.3

@@ -1,0 +1,27 @@
+# RefurbAdmin AI - Streamlit Configuration
+# South African IT Refurbishment Inventory & Pricing Platform
+
+[server]
+headless = true
+port = 8501
+address = "localhost"
+enableCORS = true
+enableXsrfProtection = true
+
+[browser]
+gatherUsageStats = false
+
+[theme]
+primaryColor = "#0078D4"
+backgroundColor = "#FFFFFF"
+secondaryBackgroundColor = "#F3F2F1"
+textColor = "#323130"
+font = "sans serif"
+
+[runner]
+magicEnabled = true
+fastReruns = true
+
+[logger]
+level = "info"
+messageFormat = "%(asctime)s %(message)s"
