@@ -78,13 +78,13 @@ def render_price_display(
             if original_price and original_price > price:
                 st.markdown(
                     f"""
-                    <span style="text-decoration: line-through; color: #999;">
+                    <span style="text-decoration: line-through; color: #888;">
                         {format_zar(original_price)}
                     </span>
-                    <span style="color: #059669; font-weight: 600; margin-left: 0.5rem;">
+                    <span style="color: #22c55e; font-weight: 600; margin-left: 0.5rem;">
                         {format_zar(price)}
                     </span>
-                    <span style="background: #d1fae5; color: #065f46; padding: 0.1rem 0.5rem; border-radius: 4px; font-size: 0.8rem; margin-left: 0.5rem;">
+                    <span style="background: #166534; color: #d1fae5; padding: 0.1rem 0.5rem; border-radius: 4px; font-size: 0.8rem; margin-left: 0.5rem;">
                         -{discount:.0f}%
                     </span>
                     """,

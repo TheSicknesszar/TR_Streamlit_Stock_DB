@@ -36,12 +36,12 @@ st.markdown(
     .main-header {
         font-size: 2.5rem;
         font-weight: 700;
-        color: #1a1a1a;
+        color: #f0f0f0;
         margin-bottom: 0.5rem;
     }
     .sub-header {
         font-size: 1.1rem;
-        color: #666;
+        color: #a0a0a0;
         margin-bottom: 1.5rem;
     }
     .metric-card {
@@ -161,7 +161,7 @@ def show_login_page() -> None:
             """
             <div style="text-align: center; padding: 2rem 0;">
                 <h1 style="font-size: 3rem; margin-bottom: 0.5rem;">💻 RefurbAdmin AI</h1>
-                <p style="font-size: 1.2rem; color: #666;">Smart Pricing for IT Refurbishment</p>
+                <p style="font-size: 1.2rem; color: #a0a0a0;">Smart Pricing for IT Refurbishment</p>
             </div>
             """,
             unsafe_allow_html=True,
@@ -189,7 +189,7 @@ def show_login_page() -> None:
         st.markdown("---")
         st.markdown(
             """
-            <div style="text-align: center; color: #666; font-size: 0.9rem;">
+            <div style="text-align: center; color: #a0a0a0; font-size: 0.9rem;">
                 <p>🇿🇦 Made in South Africa | SAST Timezone</p>
                 <p>Demo credentials: any username / any password</p>
             </div>
@@ -207,7 +207,7 @@ def show_main_app() -> None:
             """
             <div style="text-align: center; padding: 1rem 0;">
                 <h2 style="font-size: 1.5rem;">💻 RefurbAdmin</h2>
-                <p style="font-size: 0.8rem; color: #666;">AI-Powered Pricing</p>
+                <p style="font-size: 0.8rem; color: #a0a0a0;">AI-Powered Pricing</p>
             </div>
             """,
             unsafe_allow_html=True,
@@ -237,7 +237,7 @@ def show_main_app() -> None:
         # Footer
         st.markdown(
             """
-            <div style="text-align: center; font-size: 0.75rem; color: #888; padding: 1rem 0;">
+            <div style="text-align: center; font-size: 0.75rem; color: #a0a0a0; padding: 1rem 0;">
                 <p>🇿🇦 Made in South Africa | SAST Timezone</p>
             </div>
             """,
@@ -254,7 +254,7 @@ def show_home() -> None:
             """
             <div style="text-align: center; padding: 1rem 0;">
                 <h2 style="font-size: 1.5rem;">💻 RefurbAdmin</h2>
-                <p style="font-size: 0.8rem; color: #666;">AI-Powered Pricing</p>
+                <p style="font-size: 0.8rem; color: #a0a0a0;">AI-Powered Pricing</p>
             </div>
             """,
             unsafe_allow_html=True,
@@ -284,7 +284,7 @@ def show_home() -> None:
         # Footer
         st.markdown(
             """
-            <div style="text-align: center; font-size: 0.75rem; color: #888; padding: 1rem 0;">
+            <div style="text-align: center; font-size: 0.75rem; color: #a0a0a0; padding: 1rem 0;">
                 <p>🇿🇦 Made in South Africa | SAST Timezone</p>
             </div>
             """,

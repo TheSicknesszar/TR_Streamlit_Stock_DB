@@ -66,20 +66,20 @@ def render_woo_header():
         margin: 0.5rem 0 0 0;
     }
     .stat-card {
-        background: white;
+        background: #2d2d2d;
         border-radius: 10px;
         padding: 1.25rem;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        box-shadow: 0 2px 8px rgba(0,0,0,0.3);
         text-align: center;
     }
     .stat-card .stat-value {
         font-size: 1.75rem;
         font-weight: 700;
-        color: #2d3748;
+        color: #e0e0e0;
     }
     .stat-card .stat-label {
         font-size: 0.875rem;
-        color: #718096;
+        color: #a0a0a0;
         margin-top: 0.25rem;
     }
     .status-badge {
