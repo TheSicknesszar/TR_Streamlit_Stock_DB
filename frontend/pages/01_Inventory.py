@@ -23,6 +23,7 @@ from components.status_badge import (
     STATUS_CONFIG,
 )
 from components.price_display import format_zar
+from data_store import init_inventory, save_inventory, load_inventory
 
 # Page configuration
 st.set_page_config(
@@ -127,13 +128,9 @@ def show_inventory_page() -> None:
 
     # Initialize session state
     if "inventory" not in st.session_state:
-        st.session_state.inventory = get_mock_inventory()
+        st.session_state.inventory = init_inventory()
     if "show_add_form" not in st.session_state:
         st.session_state.show_add_form = False
-    if "woo_products" not in st.session_state:
-        st.session_state.woo_products = []
-    if "woo_connected" not in st.session_state:
-        st.session_state.woo_connected = False
 
     # Sidebar filters
     with st.sidebar:
@@ -392,6 +389,7 @@ def show_add_device_form() -> None:
                 }
 
                 st.session_state.inventory.append(new_device)
+                save_inventory(st.session_state.inventory)
                 st.success("Device added successfully!")
                 st.session_state.show_add_form = False
                 st.rerun()
@@ -437,6 +435,7 @@ def delete_device(device_id: str) -> None:
             st.session_state.inventory = [
                 d for d in st.session_state.inventory if d["id"] != device_id
             ]
+            save_inventory(st.session_state.inventory)
             st.success("Device deleted successfully!")
             st.rerun()
 

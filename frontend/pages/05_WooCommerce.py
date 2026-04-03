@@ -16,6 +16,7 @@ import sys
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 from wooCommerce import get_woo_products, format_woo_products, WooCommerceAPI
+from data_store import load_woo_products, save_woo_products
 
 st.set_page_config(
     page_title="WooCommerce Stock | RefurbAdmin AI",
@@ -27,9 +28,9 @@ st.set_page_config(
 def init_session_state():
     """Initialize session state variables."""
     if "woo_products" not in st.session_state:
-        st.session_state.woo_products = []
+        st.session_state.woo_products = load_woo_products()
     if "woo_connected" not in st.session_state:
-        st.session_state.woo_connected = False
+        st.session_state.woo_connected = bool(load_woo_products())
     if "woo_last_sync" not in st.session_state:
         st.session_state.woo_last_sync = None
     if "woo_store_url" not in st.session_state:
@@ -166,6 +167,7 @@ def render_sync_button(store_url: str, consumer_key: str, consumer_secret: str):
             try:
                 products = get_woo_products(store_url, consumer_key, consumer_secret)
                 st.session_state.woo_products = format_woo_products(products)
+                save_woo_products(st.session_state.woo_products)
                 st.session_state.woo_connected = True
                 st.session_state.woo_last_sync = datetime.now().isoformat()
                 st.success(f"✅ Synced {len(st.session_state.woo_products)} products!")

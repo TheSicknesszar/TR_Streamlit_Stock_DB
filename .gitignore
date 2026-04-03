@@ -53,3 +53,6 @@ data/cache/*
 
 # API Keys
 TR_Rest_API_Key.txt
+
+# Streamlit data
+frontend/data/*.json
