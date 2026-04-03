@@ -12,10 +12,8 @@ enableXsrfProtection = true
 gatherUsageStats = false
 
 [theme]
-primaryColor = "#0078D4"
-backgroundColor = "#FFFFFF"
-secondaryBackgroundColor = "#F3F2F1"
-textColor = "#323130"
+primaryColor = "#96588a"
+base = "dark"
 font = "sans serif"
 
 [runner]
